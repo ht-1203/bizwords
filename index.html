@@ -16,11 +16,11 @@ body{min-height:100vh;min-height:-webkit-fill-available;min-height:100dvh;backgr
 ::-webkit-scrollbar{width:0}
 input,button{font-family:inherit;-webkit-appearance:none}
 </style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
-
-<!-- VOCAB: plain JS, no compilation -->
 <script>
 const VOCAB=[
   ["Achieve", "สำเร็จ", "Accomplish, Attain", "Business", "She worked hard to achieve her sales target this quarter."],
@@ -1220,12 +1220,6 @@ const VOCAB=[
 ];
 
 </script>
-
-<!-- React 18 -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-<!-- App: pre-compiled, NO Babel needed -->
 <script>
 const {
   useState,
