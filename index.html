@@ -19,13 +19,9 @@ input,button{font-family:inherit;-webkit-appearance:none}
 </head>
 <body>
 <div id="root"></div>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef, useCallback } = React;
 
-// VOCAB: [word, th, synonyms, category, example]
+<!-- VOCAB data: plain JS, no compilation needed -->
+<script>
 const VOCAB=[
   ["Achieve", "สำเร็จ", "Accomplish, Attain", "Business", "She worked hard to achieve her sales target this quarter."],
   ["Accomplish", "สำเร็จ", "Achieve, Attain", "Business", "She worked hard to achieve her sales target this quarter."],
@@ -1223,7 +1219,18 @@ const VOCAB=[
   ["Cargo", "การขนส่งสินค้า", "Shipment, Delivery", "Business", "The shipment arrived three days earlier than expected."]
 ];
 
-const CATSconst CATS = ["Business","Finance","Service","Jobs","Marketing"];
+</script>
+
+<!-- React + ReactDOM -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<!-- Babel: compiles only ~32KB of app code, not 137KB of data -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const CATS = ["Business","Finance","Service","Jobs","Marketing"];
 const SK = "bizwords_v6";
 
 // ── STORAGE ──
