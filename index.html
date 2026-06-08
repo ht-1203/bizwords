@@ -19,6 +19,8 @@ input,button{font-family:inherit;-webkit-appearance:none}
 </head>
 <body>
 <div id="root"></div>
+
+<!-- VOCAB: plain JS, no compilation -->
 <script>
 const VOCAB=[
   ["Achieve", "สำเร็จ", "Accomplish, Attain", "Business", "She worked hard to achieve her sales target this quarter."],
@@ -1218,83 +1220,113 @@ const VOCAB=[
 ];
 
 </script>
+
+<!-- React 18 -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef, useCallback } = React;
 
-const CATSconst CATS = ["Business","Finance","Service","Jobs","Marketing"];
+<!-- App: pre-compiled, NO Babel needed -->
+<script>
+const {
+  useState,
+  useEffect,
+  useRef,
+  useCallback
+} = React;
+const CATS = ["Business", "Finance", "Service", "Jobs", "Marketing"];
 const SK = "bizwords_v6";
 
 // ── STORAGE ──
 // ── STORAGE: IndexedDB + sessionStorage fallback ──
-const DB_NAME = "bizwords_db", DB_VER = 1, STORE = "state";
+const DB_NAME = "bizwords_db",
+  DB_VER = 1,
+  STORE = "state";
 let _db = null;
-
 function openDB() {
   return new Promise((res, rej) => {
-    if (_db) { res(_db); return; }
+    if (_db) {
+      res(_db);
+      return;
+    }
     try {
       const req = indexedDB.open(DB_NAME, DB_VER);
       req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
-      req.onsuccess = e => { _db = e.target.result; res(_db); };
-      req.onerror   = () => rej(req.error);
-    } catch(e) { rej(e); }
+      req.onsuccess = e => {
+        _db = e.target.result;
+        res(_db);
+      };
+      req.onerror = () => rej(req.error);
+    } catch (e) {
+      rej(e);
+    }
   });
 }
 function idbSet(val) {
   return openDB().then(db => new Promise((res, rej) => {
     try {
-      const tx  = db.transaction(STORE, "readwrite");
+      const tx = db.transaction(STORE, "readwrite");
       const req = tx.objectStore(STORE).put(val, SK);
       req.onsuccess = () => res();
-      req.onerror   = () => rej(req.error);
-    } catch(e) { rej(e); }
+      req.onerror = () => rej(req.error);
+    } catch (e) {
+      rej(e);
+    }
   }));
 }
 function idbGet() {
   return openDB().then(db => new Promise((res, rej) => {
     try {
-      const tx  = db.transaction(STORE, "readonly");
+      const tx = db.transaction(STORE, "readonly");
       const req = tx.objectStore(STORE).get(SK);
       req.onsuccess = () => res(req.result || null);
-      req.onerror   = () => rej(req.error);
-    } catch(e) { rej(e); }
+      req.onerror = () => rej(req.error);
+    } catch (e) {
+      rej(e);
+    }
   }));
 }
-
 function parseState(d) {
   if (!d) return null;
   try {
     return {
-      known:   new Set((d.k||[]).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length)),
-      review:  new Set((d.r||[]).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length)),
-      selCats: new Set((d.c||CATS).filter(c => CATS.includes(c))),
-      screen:  ["home","flash","type"].includes(d.scr) ? d.scr : "home",
-      pool:    (d.pool||[]).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length),
-      qi:      (Number.isInteger(d.qi) && d.qi >= 0) ? d.qi : 0,
-      score:   (Number.isInteger(d.score) && d.score >= 0) ? d.score : 0,
-      streak:  (Number.isInteger(d.streak) && d.streak >= 0) ? d.streak : 0,
-      hp:      (Number.isInteger(d.hp) && d.hp >= 0 && d.hp <= 3) ? d.hp : 3,
-      cor:     (d.cor||[]).filter(w => typeof w === "string"),
-      wrg:     (d.wrg||[]).filter(w => typeof w === "string"),
+      known: new Set((d.k || []).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length)),
+      review: new Set((d.r || []).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length)),
+      selCats: new Set((d.c || CATS).filter(c => CATS.includes(c))),
+      screen: ["home", "flash", "type"].includes(d.scr) ? d.scr : "home",
+      pool: (d.pool || []).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length),
+      qi: Number.isInteger(d.qi) && d.qi >= 0 ? d.qi : 0,
+      score: Number.isInteger(d.score) && d.score >= 0 ? d.score : 0,
+      streak: Number.isInteger(d.streak) && d.streak >= 0 ? d.streak : 0,
+      hp: Number.isInteger(d.hp) && d.hp >= 0 && d.hp <= 3 ? d.hp : 3,
+      cor: (d.cor || []).filter(w => typeof w === "string"),
+      wrg: (d.wrg || []).filter(w => typeof w === "string")
     };
-  } catch { return null; }
-}
-
-async function loadSavedAsync() {
-  try { return parseState(await idbGet()); }
-  catch {
-    try { return parseState(JSON.parse(sessionStorage.getItem(SK) || "null")); }
-    catch { return null; }
+  } catch {
+    return null;
   }
 }
-
+async function loadSavedAsync() {
+  try {
+    return parseState(await idbGet());
+  } catch {
+    try {
+      return parseState(JSON.parse(sessionStorage.getItem(SK) || "null"));
+    } catch {
+      return null;
+    }
+  }
+}
 function saveNow(known, review, selCats, extra) {
-  const payload = { k:[...known], r:[...review], c:[...selCats], ...(extra||{}) };
+  const payload = {
+    k: [...known],
+    r: [...review],
+    c: [...selCats],
+    ...(extra || {})
+  };
   idbSet(payload).catch(() => {
-    try { sessionStorage.setItem(SK, JSON.stringify(payload)); } catch {}
+    try {
+      sessionStorage.setItem(SK, JSON.stringify(payload));
+    } catch {}
   });
 }
 
@@ -1314,73 +1346,83 @@ function hlWord(sentence, word) {
   const lw = word.toLowerCase();
   const idx = lo.indexOf(lw);
   if (idx === -1) return sentence;
-  return (
-    sentence.slice(0, idx) +
-    '<strong style="color:#ECECEC;font-style:normal">' +
-    sentence.slice(idx, idx + word.length) +
-    '</strong>' +
-    sentence.slice(idx + word.length)
-  );
+  return sentence.slice(0, idx) + '<strong style="color:#ECECEC;font-style:normal">' + sentence.slice(idx, idx + word.length) + '</strong>' + sentence.slice(idx + word.length);
 }
 
 // ── WORD CARD ──
-function WordCard({ word, meaning, category, state }) {
+function WordCard({
+  word,
+  meaning,
+  category,
+  state
+}) {
   const borderColor = state === "known" ? "#1E6640" : state === "review" ? "#6B2020" : "#2A2A2A";
-  return (
-    <div style={{
-      width:"100%", borderRadius:10,
-      background:"#111111",
-      border:`1px solid ${borderColor}`,
-      padding:"13px 15px",
-      transition:"border-color .2s",
-    }}>
-      <div style={{
-        fontSize:9, fontFamily:"'JetBrains Mono',monospace",
-        letterSpacing:".13em", textTransform:"uppercase",
-        color:"#3A3A3A", marginBottom:5,
-      }}>
-        {category}
-      </div>
-      <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
-        <span style={{
-          fontSize:24, fontWeight:600, color:"#ECECEC",
-          lineHeight:1.2, letterSpacing:"-.02em",
-          fontFamily:"'Inter',-apple-system,sans-serif",
-        }}>
-          {word}
-        </span>
-        <span style={{ fontSize:14, color:"#5A5A5A", lineHeight:1.3 }}>
-          {meaning}
-        </span>
-      </div>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      borderRadius: 10,
+      background: "#111111",
+      border: `1px solid ${borderColor}`,
+      padding: "13px 15px",
+      transition: "border-color .2s"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      fontFamily: "'JetBrains Mono',monospace",
+      letterSpacing: ".13em",
+      textTransform: "uppercase",
+      color: "#3A3A3A",
+      marginBottom: 5
+    }
+  }, category), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "baseline",
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24,
+      fontWeight: 600,
+      color: "#ECECEC",
+      lineHeight: 1.2,
+      letterSpacing: "-.02em",
+      fontFamily: "'Inter',-apple-system,sans-serif"
+    }
+  }, word), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      color: "#5A5A5A",
+      lineHeight: 1.3
+    }
+  }, meaning)));
 }
 
 // ── APP ──
 function App() {
-  const [selCats,  setSelCats]  = useState(new Set(CATS));
-  const [known,    setKnown]    = useState(new Set());
-  const [review,   setReview]   = useState(new Set());
-  const [screen,   setScreen]   = useState("home");
-  const [fcData,   setFcData]   = useState([]);
-  const [pool,     setPool]     = useState([]);
-  const [qi,       setQi]       = useState(0);
-
-  const scoreRef  = useRef(0);
+  const [selCats, setSelCats] = useState(new Set(CATS));
+  const [known, setKnown] = useState(new Set());
+  const [review, setReview] = useState(new Set());
+  const [screen, setScreen] = useState("home");
+  const [fcData, setFcData] = useState([]);
+  const [pool, setPool] = useState([]);
+  const [qi, setQi] = useState(0);
+  const scoreRef = useRef(0);
   const streakRef = useRef(0);
-  const hpRef     = useRef(3);
-  const [scoreDisp,  setScoreDisp]  = useState(0);
+  const hpRef = useRef(3);
+  const [scoreDisp, setScoreDisp] = useState(0);
   const [streakDisp, setStreakDisp] = useState(0);
-  const [hpDisp,     setHpDisp]     = useState(3);
-  const [cor,      setCor]      = useState([]);
-  const [wrg,      setWrg]      = useState([]);
-  const [typed,    setTyped]    = useState("");
+  const [hpDisp, setHpDisp] = useState(3);
+  const [cor, setCor] = useState([]);
+  const [wrg, setWrg] = useState([]);
+  const [typed, setTyped] = useState("");
   const [answered, setAnswered] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
-  const [fb,       setFb]       = useState(null);
-  const [showEx,   setShowEx]   = useState(false);
-  const inputRef  = useRef(null);
+  const [fb, setFb] = useState(null);
+  const [showEx, setShowEx] = useState(false);
+  const inputRef = useRef(null);
   const scrollRef = useRef(null);
 
   // ── Load saved state async on mount ──
@@ -1390,33 +1432,62 @@ function App() {
       setSelCats(_s.selCats);
       setKnown(_s.known);
       setReview(_s.review);
-      scoreRef.current  = _s.score;  setScoreDisp(_s.score);
-      streakRef.current = _s.streak; setStreakDisp(_s.streak);
-      hpRef.current     = _s.hp;     setHpDisp(_s.hp);
+      scoreRef.current = _s.score;
+      setScoreDisp(_s.score);
+      streakRef.current = _s.streak;
+      setStreakDisp(_s.streak);
+      hpRef.current = _s.hp;
+      setHpDisp(_s.hp);
       setCor(_s.cor);
       setWrg(_s.wrg);
       if (_s.screen === "flash") {
-        const data = VOCAB.map((v,i)=>({v,i})).filter(({v})=>_s.selCats.has(v[3]));
+        const data = VOCAB.map((v, i) => ({
+          v,
+          i
+        })).filter(({
+          v
+        }) => _s.selCats.has(v[3]));
         setFcData(data);
         setScreen("flash");
       } else if (_s.screen === "type" && _s.pool.length > 0) {
-        const restored = _s.pool.map(i => ({ v: VOCAB[i], i })).filter(x => x.v);
-        const safeQi   = Math.min(_s.qi, restored.length - 1);
+        const restored = _s.pool.map(i => ({
+          v: VOCAB[i],
+          i
+        })).filter(x => x.v);
+        const safeQi = Math.min(_s.qi, restored.length - 1);
         setPool(restored);
         setQi(safeQi);
         setScreen("type");
-        setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+        setTimeout(() => {
+          try {
+            inputRef.current?.focus();
+          } catch {}
+        }, 400);
       }
     }).catch(() => {});
   }, []);
 
   // ── visibilitychange: save with stable ref ──
-  const stateRef = useRef({ known, review, selCats });
-  useEffect(() => { stateRef.current = { known, review, selCats }; }, [known, review, selCats]);
+  const stateRef = useRef({
+    known,
+    review,
+    selCats
+  });
+  useEffect(() => {
+    stateRef.current = {
+      known,
+      review,
+      selCats
+    };
+  }, [known, review, selCats]);
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState === "hidden") {
-        const { known, review, selCats } = stateRef.current;
+        const {
+          known,
+          review,
+          selCats
+        } = stateRef.current;
         saveNow(known, review, selCats);
       }
     };
@@ -1427,123 +1498,214 @@ function App() {
   // filtered vocab — always computed from current state
   const fv = useCallback((kn, rv, sc) => {
     const cats = sc || selCats;
-    return VOCAB.map((v, i) => ({ v, i })).filter(({ v }) => cats.has(v[3]));
+    return VOCAB.map((v, i) => ({
+      v,
+      i
+    })).filter(({
+      v
+    }) => cats.has(v[3]));
   }, [selCats]);
-
   const all = fv(known, review, selCats);
-  const knN = all.filter(({ i }) => known.has(i)).length;
-  const rvN = all.filter(({ i }) => review.has(i)).length;
+  const knN = all.filter(({
+    i
+  }) => known.has(i)).length;
+  const rvN = all.filter(({
+    i
+  }) => review.has(i)).length;
 
   // ── FLASHCARD ──
   function startFlash(sc) {
     const cats = sc || selCats;
-    const data = shuffle(VOCAB.map((v, i) => ({ v, i })).filter(({ v }) => cats.has(v[3])));
+    const data = shuffle(VOCAB.map((v, i) => ({
+      v,
+      i
+    })).filter(({
+      v
+    }) => cats.has(v[3])));
     setFcData(data);
     setScreen("flash");
-    saveNow(known, review, cats, { scr:"flash" });
+    saveNow(known, review, cats, {
+      scr: "flash"
+    });
   }
-
   function markCard(i, isKnown) {
-    const nk = new Set(known), nr = new Set(review);
-    if (isKnown) { nk.add(i); nr.delete(i); } else { nr.add(i); nk.delete(i); }
-    setKnown(nk); setReview(nr);
-    saveNow(nk, nr, selCats, { scr:"flash" });
+    const nk = new Set(known),
+      nr = new Set(review);
+    if (isKnown) {
+      nk.add(i);
+      nr.delete(i);
+    } else {
+      nr.add(i);
+      nk.delete(i);
+    }
+    setKnown(nk);
+    setReview(nr);
+    saveNow(nk, nr, selCats, {
+      scr: "flash"
+    });
   }
 
   // ── TYPING ──
   // Bug fix #1 & #5: pass fresh state into startType
   function startType(rvOnly, freshKnown, freshReview, freshSelCats) {
-    const nk  = freshKnown   || known;
-    const nr  = freshReview  || review;
-    const sc  = freshSelCats || selCats;
-    const base = VOCAB.map((v, i) => ({ v, i })).filter(({ v }) => sc.has(v[3]));
-    let p = rvOnly ? base.filter(({ i }) => nr.has(i)) : base;
+    const nk = freshKnown || known;
+    const nr = freshReview || review;
+    const sc = freshSelCats || selCats;
+    const base = VOCAB.map((v, i) => ({
+      v,
+      i
+    })).filter(({
+      v
+    }) => sc.has(v[3]));
+    let p = rvOnly ? base.filter(({
+      i
+    }) => nr.has(i)) : base;
     if (!p.length) p = base;
     const shuffled = shuffle(p);
     setPool(shuffled);
     setQi(0);
-    scoreRef.current  = 0; streakRef.current = 0; hpRef.current = 3;
-    setScoreDisp(0); setStreakDisp(0); setHpDisp(3);
-    setCor([]); setWrg([]);
-    setTyped(""); setAnswered(false); setHintUsed(false);
-    setFb(null); setShowEx(false);
+    scoreRef.current = 0;
+    streakRef.current = 0;
+    hpRef.current = 3;
+    setScoreDisp(0);
+    setStreakDisp(0);
+    setHpDisp(3);
+    setCor([]);
+    setWrg([]);
+    setTyped("");
+    setAnswered(false);
+    setHintUsed(false);
+    setFb(null);
+    setShowEx(false);
     setScreen("type");
     saveNow(nk, nr, sc, {
-      scr:"type", pool:shuffled.map(x=>x.i), qi:0,
-      score:0, streak:0, hp:3, cor:[], wrg:[],
+      scr: "type",
+      pool: shuffled.map(x => x.i),
+      qi: 0,
+      score: 0,
+      streak: 0,
+      hp: 3,
+      cor: [],
+      wrg: []
     });
-    setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+    setTimeout(() => {
+      try {
+        inputRef.current?.focus();
+      } catch {}
+    }, 400);
   }
-
   function nextType() {
-    if (hpRef.current <= 0) { setScreen("result"); saveNow(known, review, selCats, { scr:"home" }); return; }
+    if (hpRef.current <= 0) {
+      setScreen("result");
+      saveNow(known, review, selCats, {
+        scr: "home"
+      });
+      return;
+    }
     const next = qi + 1;
-    if (next >= pool.length) { setScreen("result"); saveNow(known, review, selCats, { scr:"home" }); return; }
+    if (next >= pool.length) {
+      setScreen("result");
+      saveNow(known, review, selCats, {
+        scr: "home"
+      });
+      return;
+    }
     setQi(next);
-    setTyped(""); setAnswered(false);
-    setHintUsed(false); setFb(null); setShowEx(false);
+    setTyped("");
+    setAnswered(false);
+    setHintUsed(false);
+    setFb(null);
+    setShowEx(false);
     // save qi so refresh returns to this question
     saveNow(known, review, selCats, {
-      scr:"type", pool:pool.map(x=>x.i), qi:next,
-      score:scoreRef.current, streak:streakRef.current, hp:hpRef.current,
-      cor, wrg,
+      scr: "type",
+      pool: pool.map(x => x.i),
+      qi: next,
+      score: scoreRef.current,
+      streak: streakRef.current,
+      hp: hpRef.current,
+      cor,
+      wrg
     });
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+    setTimeout(() => {
+      try {
+        inputRef.current?.focus();
+      } catch {}
+    }, 400);
   }
-
   function submitType() {
     if (answered || !pool[qi]) return;
-    const { v, i } = pool[qi];
+    const {
+      v,
+      i
+    } = pool[qi];
     const t = typed.trim();
     if (!t) return;
-
     const isOK = t.toLowerCase() === v[0].toLowerCase();
-    const nk = new Set(known), nr = new Set(review);
-
+    const nk = new Set(known),
+      nr = new Set(review);
     if (isOK) {
       streakRef.current += 1;
       const pts = hintUsed ? 5 : 10 * streakRef.current;
       scoreRef.current += pts;
-      nk.add(i); nr.delete(i);
+      nk.add(i);
+      nr.delete(i);
       setCor(c => [...c, v[0]]);
-      setFb({ ok: true, msg: `Correct — ${v[0]} = ${v[1]}${streakRef.current > 1 ? `  ·  Streak ×${streakRef.current}` : ""}` });
+      setFb({
+        ok: true,
+        msg: `Correct — ${v[0]} = ${v[1]}${streakRef.current > 1 ? `  ·  Streak ×${streakRef.current}` : ""}`
+      });
     } else {
       streakRef.current = 0;
       hpRef.current = Math.max(0, hpRef.current - 1);
-      nr.add(i); nk.delete(i);
+      nr.add(i);
+      nk.delete(i);
       setWrg(w => [...w, v[0]]);
-      setFb({ ok: false, msg: `Incorrect — answer is "${v[0]}"` });
+      setFb({
+        ok: false,
+        msg: `Incorrect — answer is "${v[0]}"`
+      });
     }
-
     setScoreDisp(scoreRef.current);
     setStreakDisp(streakRef.current);
     setHpDisp(hpRef.current);
-    setAnswered(true); setShowEx(true);
-    setKnown(nk); setReview(nr);
+    setAnswered(true);
+    setShowEx(true);
+    setKnown(nk);
+    setReview(nr);
     // save after each answer so refresh returns to same question (unanswered)
     saveNow(nk, nr, selCats, {
-      scr:"type", pool:pool.map(x=>x.i), qi,
-      score:scoreRef.current, streak:streakRef.current, hp:hpRef.current,
+      scr: "type",
+      pool: pool.map(x => x.i),
+      qi,
+      score: scoreRef.current,
+      streak: streakRef.current,
+      hp: hpRef.current,
       cor: isOK ? [...cor, v[0]] : cor,
-      wrg: isOK ? wrg : [...wrg, v[0]],
+      wrg: isOK ? wrg : [...wrg, v[0]]
     });
-    setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = 9999; }, 120);
+    setTimeout(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = 9999;
+    }, 120);
   }
-
   function showHint() {
     if (!pool[qi]) return;
     setHintUsed(true);
     if (inputRef.current) inputRef.current.placeholder = pool[qi].v[0][0] + "·".repeat(pool[qi].v[0].length - 1);
   }
-
   function retryWrong() {
-    const nk = new Set(known), nr = new Set(review);
+    const nk = new Set(known),
+      nr = new Set(review);
     wrg.forEach(w => {
       const idx = VOCAB.findIndex(v => v[0] === w);
-      if (idx >= 0) { nr.add(idx); nk.delete(idx); }
+      if (idx >= 0) {
+        nr.add(idx);
+        nk.delete(idx);
+      }
     });
-    setKnown(nk); setReview(nr);
+    setKnown(nk);
+    setReview(nr);
     startType(true, nk, nr, selCats);
   }
 
@@ -1553,516 +1715,952 @@ function App() {
     const base = fv(known, review, selCats);
     // แตก synonym แต่ละคำออกมา เป็น question แยกกัน
     const questions = [];
-    shuffle(base).forEach(({ v, i }) => {
+    shuffle(base).forEach(({
+      v,
+      i
+    }) => {
       const syns = v[2].split(", ").map(s => s.trim()).filter(s => s);
       syns.forEach(syn => {
-        questions.push({ syn, word: v[0], th: v[1], cat: v[3], ex: v[4], vocabIdx: i });
+        questions.push({
+          syn,
+          word: v[0],
+          th: v[1],
+          cat: v[3],
+          ex: v[4],
+          vocabIdx: i
+        });
       });
     });
     const shuffledQ = shuffle(questions).slice(0, Math.min(questions.length, 60));
     setPool(shuffledQ);
     setQi(0);
-    scoreRef.current  = 0; streakRef.current = 0; hpRef.current = 3;
-    setScoreDisp(0); setStreakDisp(0); setHpDisp(3);
-    setCor([]); setWrg([]);
-    setTyped(""); setAnswered(false); setHintUsed(false);
-    setFb(null); setShowEx(false);
+    scoreRef.current = 0;
+    streakRef.current = 0;
+    hpRef.current = 3;
+    setScoreDisp(0);
+    setStreakDisp(0);
+    setHpDisp(3);
+    setCor([]);
+    setWrg([]);
+    setTyped("");
+    setAnswered(false);
+    setHintUsed(false);
+    setFb(null);
+    setShowEx(false);
     setScreen("syn");
-    setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+    setTimeout(() => {
+      try {
+        inputRef.current?.focus();
+      } catch {}
+    }, 400);
   }
-
   function nextSyn() {
-    if (hpRef.current <= 0 || qi + 1 >= pool.length) { setScreen("result"); return; }
+    if (hpRef.current <= 0 || qi + 1 >= pool.length) {
+      setScreen("result");
+      return;
+    }
     const next = qi + 1;
-    setQi(next); setTyped(""); setAnswered(false);
-    setHintUsed(false); setFb(null); setShowEx(false);
+    setQi(next);
+    setTyped("");
+    setAnswered(false);
+    setHintUsed(false);
+    setFb(null);
+    setShowEx(false);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+    setTimeout(() => {
+      try {
+        inputRef.current?.focus();
+      } catch {}
+    }, 400);
   }
-
   function submitSyn() {
     if (answered || !pool[qi]) return;
-    const q   = pool[qi];
-    const t   = typed.trim();
+    const q = pool[qi];
+    const t = typed.trim();
     if (!t) return;
     const isOK = t.toLowerCase() === q.word.toLowerCase();
-    const nk = new Set(known), nr = new Set(review);
+    const nk = new Set(known),
+      nr = new Set(review);
     if (isOK) {
       streakRef.current += 1;
       const pts = hintUsed ? 5 : 10 * streakRef.current;
       scoreRef.current += pts;
-      nk.add(q.vocabIdx); nr.delete(q.vocabIdx);
+      nk.add(q.vocabIdx);
+      nr.delete(q.vocabIdx);
       setCor(c => [...c, q.word]);
-      setFb({ ok:true, msg:`Correct — "${q.syn}" = ${q.word} (${q.th})${streakRef.current > 1 ? `  ·  Streak ×${streakRef.current}` : ""}` });
+      setFb({
+        ok: true,
+        msg: `Correct — "${q.syn}" = ${q.word} (${q.th})${streakRef.current > 1 ? `  ·  Streak ×${streakRef.current}` : ""}`
+      });
     } else {
       streakRef.current = 0;
       hpRef.current = Math.max(0, hpRef.current - 1);
-      nr.add(q.vocabIdx); nk.delete(q.vocabIdx);
+      nr.add(q.vocabIdx);
+      nk.delete(q.vocabIdx);
       setWrg(w => [...w, q.word]);
-      setFb({ ok:false, msg:`Incorrect — "${q.syn}" = ${q.word}` });
+      setFb({
+        ok: false,
+        msg: `Incorrect — "${q.syn}" = ${q.word}`
+      });
     }
     setScoreDisp(scoreRef.current);
     setStreakDisp(streakRef.current);
     setHpDisp(hpRef.current);
-    setAnswered(true); setShowEx(true);
-    setKnown(nk); setReview(nr);
+    setAnswered(true);
+    setShowEx(true);
+    setKnown(nk);
+    setReview(nr);
     saveNow(nk, nr, selCats);
-    setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = 9999; }, 120);
+    setTimeout(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = 9999;
+    }, 120);
   }
 
   // ── STYLES ──
   const T = {
-    bg:"#0A0A0A", bg2:"#111", bg3:"#181818",
-    line:"#1E1E1E", line2:"#2A2A2A", line3:"#363636",
-    t1:"#ECECEC", t2:"#787878", t3:"#424242",
-    green:"#1E6640", greenT:"#0D3320", greenFg:"#4DB87A",
-    red:"#6B2020", redT:"#331010", redFg:"#C97070",
+    bg: "#0A0A0A",
+    bg2: "#111",
+    bg3: "#181818",
+    line: "#1E1E1E",
+    line2: "#2A2A2A",
+    line3: "#363636",
+    t1: "#ECECEC",
+    t2: "#787878",
+    t3: "#424242",
+    green: "#1E6640",
+    greenT: "#0D3320",
+    greenFg: "#4DB87A",
+    red: "#6B2020",
+    redT: "#331010",
+    redFg: "#C97070"
   };
-  const mono = { fontFamily:"'JetBrains Mono',monospace" };
+  const mono = {
+    fontFamily: "'JetBrains Mono',monospace"
+  };
   const fullPage = {
-    fontFamily:"'Inter',-apple-system,sans-serif",
-    background:T.bg, color:T.t1,
-    height:"100dvh", display:"flex", flexDirection:"column",
-    WebkitFontSmoothing:"antialiased", fontSize:16,
+    fontFamily: "'Inter',-apple-system,sans-serif",
+    background: T.bg,
+    color: T.t1,
+    height: "100dvh",
+    display: "flex",
+    flexDirection: "column",
+    WebkitFontSmoothing: "antialiased",
+    fontSize: 16
   };
   const scrollFill = {
-    flex:1, overflowY:"auto", overflowX:"hidden",
-    WebkitOverflowScrolling:"touch",
-    overscrollBehaviorY:"contain",
+    flex: 1,
+    overflowY: "auto",
+    overflowX: "hidden",
+    WebkitOverflowScrolling: "touch",
+    overscrollBehaviorY: "contain"
   };
   const topbar = {
-    flexShrink:0, display:"flex", alignItems:"center", gap:10,
-    padding:"10px 16px",
-    borderBottom:`1px solid ${T.line}`,
-    background:T.bg, minHeight:52,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "10px 16px",
+    borderBottom: `1px solid ${T.line}`,
+    background: T.bg,
+    minHeight: 52
   };
   const backBtn = {
-    width:44, height:44, borderRadius:10,
-    border:`1px solid ${T.line2}`, background:"transparent",
-    color:T.t2, fontSize:16, cursor:"pointer",
-    display:"flex", alignItems:"center", justifyContent:"center",
-    flexShrink:0, WebkitAppearance:"none",
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    border: `1px solid ${T.line2}`,
+    background: "transparent",
+    color: T.t2,
+    fontSize: 16,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    WebkitAppearance: "none"
   };
-  const catLbl = { fontSize:9, ...mono, letterSpacing:".13em", textTransform:"uppercase", color:T.t3 };
-  const btn = (fill) => ({
-    display:"block", width:"100%", minHeight:44,
-    padding:"13px 18px", borderRadius:10,
+  const catLbl = {
+    fontSize: 9,
+    ...mono,
+    letterSpacing: ".13em",
+    textTransform: "uppercase",
+    color: T.t3
+  };
+  const btn = fill => ({
+    display: "block",
+    width: "100%",
+    minHeight: 44,
+    padding: "13px 18px",
+    borderRadius: 10,
     border: fill ? "none" : `1px solid ${T.line2}`,
     background: fill ? T.t1 : T.bg2,
     color: fill ? T.bg : T.t2,
-    fontSize:14, fontWeight:500, cursor:"pointer",
-    WebkitAppearance:"none", marginTop:8,
-    transition:"opacity .12s",
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: "pointer",
+    WebkitAppearance: "none",
+    marginTop: 8,
+    transition: "opacity .12s"
   });
   const synTag = {
-    fontSize:12, ...mono, padding:"4px 10px", borderRadius:5,
-    background:T.bg3, border:`1px solid ${T.line3}`, color:T.t2,
-    display:"inline-block", marginRight:5, marginBottom:4,
+    fontSize: 12,
+    ...mono,
+    padding: "4px 10px",
+    borderRadius: 5,
+    background: T.bg3,
+    border: `1px solid ${T.line3}`,
+    color: T.t2,
+    display: "inline-block",
+    marginRight: 5,
+    marginBottom: 4
   };
   const exBox = {
-    fontSize:13, lineHeight:1.65, color:T.t2, fontStyle:"italic",
-    background:T.bg3, borderRadius:8, padding:"9px 11px", marginBottom:10,
+    fontSize: 13,
+    lineHeight: 1.65,
+    color: T.t2,
+    fontStyle: "italic",
+    background: T.bg3,
+    borderRadius: 8,
+    padding: "9px 11px",
+    marginBottom: 10
   };
-
-  const ProgBar = ({ left, right, pct }) => (
-    <div style={{ flexShrink:0, padding:"7px 16px 0" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-        <span style={{ fontSize:10, ...mono, color:T.t3 }}>{left}</span>
-        <span style={{ fontSize:10, ...mono, color:T.t3 }}>{right}</span>
-      </div>
-      <div style={{ height:2, background:T.line2, borderRadius:2, overflow:"hidden" }}>
-        <div style={{ height:"100%", background:T.t3, borderRadius:2, width:`${pct}%`, transition:"width .4s" }}/>
-      </div>
-    </div>
-  );
+  const ProgBar = ({
+    left,
+    right,
+    pct
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      flexShrink: 0,
+      padding: "7px 16px 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      ...mono,
+      color: T.t3
+    }
+  }, left), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      ...mono,
+      color: T.t3
+    }
+  }, right)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 2,
+      background: T.line2,
+      borderRadius: 2,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      background: T.t3,
+      borderRadius: 2,
+      width: `${pct}%`,
+      transition: "width .4s"
+    }
+  })));
 
   // ── HOME ──
-  if (screen === "home") return (
-    <div style={{ ...fullPage, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-      <div style={{ padding:"28px 18px 20px", borderBottom:`1px solid ${T.line}` }}>
-        <div style={{ ...catLbl, marginBottom:10 }}>BizWords · Business English</div>
-        <div style={{ fontSize:26, fontWeight:300, lineHeight:1.25, letterSpacing:"-.02em" }}>
-          Learn <strong style={{ fontWeight:600 }}>1,194 Words</strong><br/>in 5 categories
-        </div>
-        <div style={{ fontSize:13, lineHeight:1.7, color:T.t3, marginTop:8 }}>
-          Flashcard จำคำ + synonyms · Typing ฝึกพิมพ์ · Synonym ฝึกจำคำเหมือน
-        </div>
-      </div>
-
-      <div style={{ padding:"0 18px" }}>
-        {/* stats */}
-        <div style={{ display:"flex", gap:1, background:T.line, borderRadius:10, overflow:"hidden", margin:"16px 0" }}>
-          {[["Words", all.length], ["Known", knN], ["Review", rvN]].map(([l, n]) => (
-            <div key={l} style={{ flex:1, background:T.bg2, padding:"11px 8px", textAlign:"center" }}>
-              <div style={{ fontSize:20, fontWeight:600, color:T.t1, ...mono, lineHeight:1 }}>{n}</div>
-              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:".08em", color:T.t3, marginTop:3 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* categories */}
-        <div style={{ ...catLbl, marginBottom:7 }}>Category</div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:22 }}>
-          {CATS.map(c => {
-            const on = selCats.has(c);
-            return (
-              <button key={c} onClick={() => {
-                const s = new Set(selCats);
-                if (s.has(c)) { if (s.size > 1) s.delete(c); } else s.add(c);
-                setSelCats(s);
-                saveNow(known, review, s, { scr:"home" });
-              }} style={{
-                padding:"6px 12px", minHeight:32, borderRadius:6,
-                fontSize:11, ...mono, letterSpacing:".03em",
-                border:`1px solid ${on ? T.line3 : T.line2}`,
-                background: on ? T.bg3 : T.bg2,
-                color: on ? T.t1 : T.t3,
-                cursor:"pointer", WebkitAppearance:"none",
-              }}>
-                {c} {VOCAB.filter(v => v[3] === c).length}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* modes */}
-        <div style={{ ...catLbl, marginBottom:6 }}>Mode</div>
-        <button style={btn(true)} onClick={() => startFlash()}>Flashcard — ดูและจำ</button>
-        <button style={btn(false)} onClick={() => startType(false)}>Typing — ฝึกพิมพ์</button>
-        <button style={btn(false)} onClick={() => startSyn()}>Synonym — เห็นคำเหมือน พิมพ์คำหลัก</button>
-        {rvN > 0 && (
-          <button style={btn(false)} onClick={() => startType(true)}>
-            Typing — ทบทวน {rvN} คำ
-          </button>
-        )}
-        <div style={{ height:40 }}/>
-      </div>
-    </div>
-  );
+  if (screen === "home") return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...fullPage,
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "28px 18px 20px",
+      borderBottom: `1px solid ${T.line}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...catLbl,
+      marginBottom: 10
+    }
+  }, "BizWords \xB7 Business English"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 26,
+      fontWeight: 300,
+      lineHeight: 1.25,
+      letterSpacing: "-.02em"
+    }
+  }, "Learn ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      fontWeight: 600
+    }
+  }, "1,194 Words"), /*#__PURE__*/React.createElement("br", null), "in 5 categories"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      lineHeight: 1.7,
+      color: T.t3,
+      marginTop: 8
+    }
+  }, "Flashcard \u0E08\u0E33\u0E04\u0E33 + synonyms \xB7 Typing \u0E1D\u0E36\u0E01\u0E1E\u0E34\u0E21\u0E1E\u0E4C \xB7 Synonym \u0E1D\u0E36\u0E01\u0E08\u0E33\u0E04\u0E33\u0E40\u0E2B\u0E21\u0E37\u0E2D\u0E19")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "0 18px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 1,
+      background: T.line,
+      borderRadius: 10,
+      overflow: "hidden",
+      margin: "16px 0"
+    }
+  }, [["Words", all.length], ["Known", knN], ["Review", rvN]].map(([l, n]) => /*#__PURE__*/React.createElement("div", {
+    key: l,
+    style: {
+      flex: 1,
+      background: T.bg2,
+      padding: "11px 8px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 600,
+      color: T.t1,
+      ...mono,
+      lineHeight: 1
+    }
+  }, n), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      textTransform: "uppercase",
+      letterSpacing: ".08em",
+      color: T.t3,
+      marginTop: 3
+    }
+  }, l)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...catLbl,
+      marginBottom: 7
+    }
+  }, "Category"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 22
+    }
+  }, CATS.map(c => {
+    const on = selCats.has(c);
+    return /*#__PURE__*/React.createElement("button", {
+      key: c,
+      onClick: () => {
+        const s = new Set(selCats);
+        if (s.has(c)) {
+          if (s.size > 1) s.delete(c);
+        } else s.add(c);
+        setSelCats(s);
+        saveNow(known, review, s, {
+          scr: "home"
+        });
+      },
+      style: {
+        padding: "6px 12px",
+        minHeight: 32,
+        borderRadius: 6,
+        fontSize: 11,
+        ...mono,
+        letterSpacing: ".03em",
+        border: `1px solid ${on ? T.line3 : T.line2}`,
+        background: on ? T.bg3 : T.bg2,
+        color: on ? T.t1 : T.t3,
+        cursor: "pointer",
+        WebkitAppearance: "none"
+      }
+    }, c, " ", VOCAB.filter(v => v[3] === c).length);
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...catLbl,
+      marginBottom: 6
+    }
+  }, "Mode"), /*#__PURE__*/React.createElement("button", {
+    style: btn(true),
+    onClick: () => startFlash()
+  }, "Flashcard \u2014 \u0E14\u0E39\u0E41\u0E25\u0E30\u0E08\u0E33"), /*#__PURE__*/React.createElement("button", {
+    style: btn(false),
+    onClick: () => startType(false)
+  }, "Typing \u2014 \u0E1D\u0E36\u0E01\u0E1E\u0E34\u0E21\u0E1E\u0E4C"), /*#__PURE__*/React.createElement("button", {
+    style: btn(false),
+    onClick: () => startSyn()
+  }, "Synonym \u2014 \u0E40\u0E2B\u0E47\u0E19\u0E04\u0E33\u0E40\u0E2B\u0E21\u0E37\u0E2D\u0E19 \u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E04\u0E33\u0E2B\u0E25\u0E31\u0E01"), rvN > 0 && /*#__PURE__*/React.createElement("button", {
+    style: btn(false),
+    onClick: () => startType(true)
+  }, "Typing \u2014 \u0E17\u0E1A\u0E17\u0E27\u0E19 ", rvN, " \u0E04\u0E33"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 40
+    }
+  })));
 
   // ── FLASHCARD ──
   if (screen === "flash") {
     const total = fcData.length;
-    const kn2 = fcData.filter(({ i }) => known.has(i)).length;
-    const rv2 = fcData.filter(({ i }) => review.has(i)).length;
+    const kn2 = fcData.filter(({
+      i
+    }) => known.has(i)).length;
+    const rv2 = fcData.filter(({
+      i
+    }) => review.has(i)).length;
     const done = kn2 + rv2;
-    const pct  = total > 0 ? Math.round(done / total * 100) : 0;
-
-    return (
-      <div style={fullPage}>
-        <div style={topbar}>
-          <button style={backBtn} onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>←</button>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={catLbl}>Flashcard</div>
-            <div style={{ fontSize:12, color:T.t2, marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {[...selCats].join(" · ")}
-            </div>
-          </div>
-          <span style={{ fontSize:11, ...mono, color:T.t3, flexShrink:0 }}>{done}/{total}</span>
-        </div>
-
-        <ProgBar left={`${pct}%`} right={`Known ${kn2} · Review ${rv2}`} pct={pct}/>
-
-        <div style={scrollFill}>
-          <div style={{ padding:"10px 15px 0" }}>
-            {/* Done banner */}
-            {done === total && total > 0 && (
-              <div style={{ background:T.bg2, border:`1px solid ${T.line}`, borderRadius:12, padding:"18px 16px", textAlign:"center", marginBottom:10 }}>
-                <div style={{ fontSize:36, fontWeight:600, ...mono }}>{kn2}/{total}</div>
-                <div style={{ fontSize:12, color:T.t2, marginTop:3, marginBottom:14 }}>
-                  Known · {Math.round(kn2 / total * 100)}%
-                </div>
-                <div style={{ display:"flex", gap:8 }}>
-                  <button style={{ ...btn(false), flex:1, marginTop:0 }} onClick={() => {
-                    const nk = new Set(known), nr = new Set(review);
-                    fcData.forEach(({ i }) => { nk.delete(i); nr.delete(i); });
-                    setKnown(nk); setReview(nr);
-                    startFlash(selCats);
-                  }}>Reset</button>
-                  <button style={{ ...btn(true), flex:1, marginTop:0 }} onClick={() => startType(true)}>
-                    Start Typing →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Cards */}
-            {fcData.map(({ v, i }, idx) => {
-              const st = known.has(i) ? "known" : review.has(i) ? "review" : "";
-              const syns = v[2].split(", ");
-              const exHl = hlWord(v[4], v[0]);
-              return (
-                <div key={i} style={{ marginBottom:10 }}>
-                  <WordCard word={v[0]} meaning={v[1]} category={v[3]} state={st}/>
-                  <div style={{
-                    background:T.bg2,
-                    border:`1px solid ${st==="known"?T.green:st==="review"?T.red:T.line}`,
-                    borderTop:"none",
-                    borderRadius:"0 0 10px 10px",
-                    padding:"10px 14px 13px",
-                  }}>
-                    <div style={{ ...catLbl, marginBottom:5 }}>Synonyms</div>
-                    <div style={{ marginBottom:10 }}>
-                      {syns.map(s => <span key={s} style={synTag}>{s.trim()}</span>)}
-                    </div>
-                    <div style={exBox} dangerouslySetInnerHTML={{ __html: exHl }}/>
-                    <div style={{ display:"flex", gap:7 }}>
-                      <button
-                        style={{ flex:1, minHeight:44, padding:"10px", borderRadius:8,
-                          fontSize:13, fontWeight:500, cursor:"pointer",
-                          border:`1px solid ${T.green}`, background:T.bg3, color:T.greenFg,
-                          WebkitAppearance:"none" }}
-                        onClick={() => markCard(i, true)}>
-                        Known
-                      </button>
-                      <button
-                        style={{ flex:1, minHeight:44, padding:"10px", borderRadius:8,
-                          fontSize:13, fontWeight:500, cursor:"pointer",
-                          border:`1px solid ${T.red}`, background:T.bg3, color:T.redFg,
-                          WebkitAppearance:"none" }}
-                        onClick={() => markCard(i, false)}>
-                        Review
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Sticky CTA */}
-            {rv2 > 0 && (
-              <div style={{
-                position:"sticky", bottom:0,
-                background:`linear-gradient(to top, ${T.bg} 55%, transparent)`,
-                padding:"10px 0 16px",
-              }}>
-                <button style={{ ...btn(true), marginTop:0 }} onClick={() => startType(true)}>
-                  Start Typing — {rv2} คำที่ต้องทบทวน →
-                </button>
-              </div>
-            )}
-            <div style={{ height:20 }}/>
-          </div>
-        </div>
-      </div>
-    );
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+    return /*#__PURE__*/React.createElement("div", {
+      style: fullPage
+    }, /*#__PURE__*/React.createElement("div", {
+      style: topbar
+    }, /*#__PURE__*/React.createElement("button", {
+      style: backBtn,
+      onClick: () => {
+        setScreen("home");
+        saveNow(known, review, selCats, {
+          scr: "home"
+        });
+      }
+    }, "\u2190"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: catLbl
+    }, "Flashcard"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: T.t2,
+        marginTop: 2,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      }
+    }, [...selCats].join(" · "))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        ...mono,
+        color: T.t3,
+        flexShrink: 0
+      }
+    }, done, "/", total)), /*#__PURE__*/React.createElement(ProgBar, {
+      left: `${pct}%`,
+      right: `Known ${kn2} · Review ${rv2}`,
+      pct: pct
+    }), /*#__PURE__*/React.createElement("div", {
+      style: scrollFill
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px 15px 0"
+      }
+    }, done === total && total > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.bg2,
+        border: `1px solid ${T.line}`,
+        borderRadius: 12,
+        padding: "18px 16px",
+        textAlign: "center",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 36,
+        fontWeight: 600,
+        ...mono
+      }
+    }, kn2, "/", total), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: T.t2,
+        marginTop: 3,
+        marginBottom: 14
+      }
+    }, "Known \xB7 ", Math.round(kn2 / total * 100), "%"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...btn(false),
+        flex: 1,
+        marginTop: 0
+      },
+      onClick: () => {
+        const nk = new Set(known),
+          nr = new Set(review);
+        fcData.forEach(({
+          i
+        }) => {
+          nk.delete(i);
+          nr.delete(i);
+        });
+        setKnown(nk);
+        setReview(nr);
+        startFlash(selCats);
+      }
+    }, "Reset"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...btn(true),
+        flex: 1,
+        marginTop: 0
+      },
+      onClick: () => startType(true)
+    }, "Start Typing \u2192"))), fcData.map(({
+      v,
+      i
+    }, idx) => {
+      const st = known.has(i) ? "known" : review.has(i) ? "review" : "";
+      const syns = v[2].split(", ");
+      const exHl = hlWord(v[4], v[0]);
+      return /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement(WordCard, {
+        word: v[0],
+        meaning: v[1],
+        category: v[3],
+        state: st
+      }), /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: T.bg2,
+          border: `1px solid ${st === "known" ? T.green : st === "review" ? T.red : T.line}`,
+          borderTop: "none",
+          borderRadius: "0 0 10px 10px",
+          padding: "10px 14px 13px"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          ...catLbl,
+          marginBottom: 5
+        }
+      }, "Synonyms"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginBottom: 10
+        }
+      }, syns.map(s => /*#__PURE__*/React.createElement("span", {
+        key: s,
+        style: synTag
+      }, s.trim()))), /*#__PURE__*/React.createElement("div", {
+        style: exBox,
+        dangerouslySetInnerHTML: {
+          __html: exHl
+        }
+      }), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 7
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        style: {
+          flex: 1,
+          minHeight: 44,
+          padding: "10px",
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: "pointer",
+          border: `1px solid ${T.green}`,
+          background: T.bg3,
+          color: T.greenFg,
+          WebkitAppearance: "none"
+        },
+        onClick: () => markCard(i, true)
+      }, "Known"), /*#__PURE__*/React.createElement("button", {
+        style: {
+          flex: 1,
+          minHeight: 44,
+          padding: "10px",
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: "pointer",
+          border: `1px solid ${T.red}`,
+          background: T.bg3,
+          color: T.redFg,
+          WebkitAppearance: "none"
+        },
+        onClick: () => markCard(i, false)
+      }, "Review"))));
+    }), rv2 > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "sticky",
+        bottom: 0,
+        background: `linear-gradient(to top, ${T.bg} 55%, transparent)`,
+        padding: "10px 0 16px"
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...btn(true),
+        marginTop: 0
+      },
+      onClick: () => startType(true)
+    }, "Start Typing \u2014 ", rv2, " \u0E04\u0E33\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E17\u0E1A\u0E17\u0E27\u0E19 \u2192")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 20
+      }
+    }))));
   }
 
   // ── TYPING ──
   // Bug fix #7: guard empty pool
   if (screen === "type") {
-    if (!pool.length) return (
-      <div style={{ ...fullPage, alignItems:"center", justifyContent:"center" }}>
-        <div style={{ color:T.t3, fontSize:14 }}>No words to practice.</div>
-        <button style={{ ...btn(true), width:"auto", padding:"12px 24px", marginTop:16 }}
-          onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>Back</button>
-      </div>
-    );
-
-    const cur   = pool[qi] || pool[0];
-    const { v } = cur;
+    if (!pool.length) return /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...fullPage,
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: T.t3,
+        fontSize: 14
+      }
+    }, "No words to practice."), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...btn(true),
+        width: "auto",
+        padding: "12px 24px",
+        marginTop: 16
+      },
+      onClick: () => {
+        setScreen("home");
+        saveNow(known, review, selCats, {
+          scr: "home"
+        });
+      }
+    }, "Back"));
+    const cur = pool[qi] || pool[0];
+    const {
+      v
+    } = cur;
     const total = pool.length;
-    const pct   = Math.round(qi / total * 100);
-
-    return (
-      <div style={fullPage}>
-        <div style={topbar}>
-          <button style={backBtn} onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>←</button>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={catLbl}>Typing</div>
-            <div style={{ fontSize:12, color:T.t2, marginTop:2 }}>
-              {[...selCats].join(" · ")} · {total} words
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
-            <span style={{ fontSize:12, ...mono, color:T.t2 }}>
-              ★ <strong style={{ color:T.t1 }}>{scoreDisp}</strong>
-            </span>
-            {/* hp dots */}
-            <div style={{ display:"flex", gap:3 }}>
-              {[0,1,2].map(n => (
-                <div key={n} style={{
-                  width:7, height:7, borderRadius:"50%",
-                  background: n < hpDisp ? T.t2 : T.line2,
-                  transition:"background .25s",
-                }}/>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <ProgBar left={`${pct}%`} right={`${qi+1} / ${total}`} pct={pct}/>
-
-        <div ref={scrollRef} style={scrollFill}>
-          <div style={{ padding:"10px 15px 0" }}>
-            <WordCard word={v[0]} meaning={v[1]} category={v[3]} state=""/>
-          </div>
-          <div style={{ padding:"8px 15px 0" }}>
-            {/* question */}
-            <div style={{
-              background:T.bg2, border:`1px solid ${T.line}`,
-              borderRadius:10, padding:"12px 14px", marginBottom:9,
-            }}>
-              <div style={{ ...catLbl, marginBottom:5 }}>พิมพ์คำภาษาอังกฤษ</div>
-              <div style={{ fontSize:15, lineHeight:1.5, color:T.t1 }}>
-                "{v[1]}"
-              </div>
-            </div>
-
-            {/* synonyms hint */}
-            <div style={{ marginBottom:9 }}>
-              <span style={{ ...catLbl, marginRight:6 }}>Synonyms</span>
-              {v[2].split(", ").map(s => (
-                <span key={s} style={synTag}>{s.trim()}</span>
-              ))}
-            </div>
-
-            {/* input */}
-            <div style={{ display:"flex", gap:8, marginBottom:6 }}>
-              <input
-                ref={inputRef}
-                value={typed}
-                onChange={e => setTyped(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitType(); } }}
-                disabled={answered}
-                placeholder="Type the English word…"
-                autoComplete="off" autoCorrect="off"
-                autoCapitalize="off" spellCheck="false"
-                style={{
-                  flex:1, height:48, padding:"0 14px",
-                  background:T.bg2,
-                  border:`1px solid ${answered ? (fb?.ok ? T.green : T.red) : T.line2}`,
-                  borderRadius:10,
-                  color: answered ? (fb?.ok ? T.greenFg : T.redFg) : T.t1,
-                  fontSize:16, outline:"none",
-                  WebkitAppearance:"none", caretColor:T.t1,
-                  transition:"border-color .15s, color .15s",
-                }}
-              />
-              <button
-                onClick={submitType}
-                disabled={answered}
-                style={{
-                  width:48, height:48, borderRadius:10,
-                  background:T.bg2, border:`1px solid ${T.line2}`,
-                  color:T.t2, fontSize:15, cursor:"pointer",
-                  WebkitAppearance:"none",
-                }}>
-                ↵
-              </button>
-            </div>
-
-            {/* hint */}
-            {!answered && !hintUsed && (
-              <button onClick={showHint} style={{
-                background:"none", border:"none", padding:"3px 0",
-                fontSize:12, color:T.t3, textDecoration:"underline",
-                cursor:"pointer", display:"block",
-              }}>
-                Show hint
-              </button>
-            )}
-
-            {/* feedback */}
-            {fb && (
-              <div style={{
-                borderRadius:10, padding:"10px 13px",
-                fontSize:13, lineHeight:1.55, marginTop:8, marginBottom:8,
-                background: fb.ok ? T.greenT : T.redT,
-                border:`1px solid ${fb.ok ? T.green : T.red}`,
-                color: fb.ok ? T.greenFg : T.redFg,
-                animation:"fbi .18s ease",
-              }}>
-                {fb.msg}
-              </div>
-            )}
-
-            {/* example */}
-            {showEx && (
-              <div>
-                <div style={{ ...catLbl, marginBottom:5 }}>Example</div>
-                <div
-                  style={exBox}
-                  dangerouslySetInnerHTML={{ __html: hlWord(v[4], v[0]) }}
-                />
-              </div>
-            )}
-          </div>
-          <div style={{ height:96 }}/>
-        </div>
-
-        {/* next CTA */}
-        {answered && (
-          <div style={{
-            position:"absolute", bottom:0, left:0, right:0,
-            padding:"10px 16px 20px",
-            background:`linear-gradient(to top, ${T.bg} 55%, transparent)`,
-          }}>
-            <button style={{ ...btn(true), marginTop:0 }} onClick={nextType}>
-              {qi + 1 >= pool.length || hpRef.current <= 0 ? "See Results →" : "Next →"}
-            </button>
-          </div>
-        )}
-        <style>{`@keyframes fbi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style>
-      </div>
-    );
+    const pct = Math.round(qi / total * 100);
+    return /*#__PURE__*/React.createElement("div", {
+      style: fullPage
+    }, /*#__PURE__*/React.createElement("div", {
+      style: topbar
+    }, /*#__PURE__*/React.createElement("button", {
+      style: backBtn,
+      onClick: () => {
+        setScreen("home");
+        saveNow(known, review, selCats, {
+          scr: "home"
+        });
+      }
+    }, "\u2190"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: catLbl
+    }, "Typing"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: T.t2,
+        marginTop: 2
+      }
+    }, [...selCats].join(" · "), " \xB7 ", total, " words")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        ...mono,
+        color: T.t2
+      }
+    }, "\u2605 ", /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: T.t1
+      }
+    }, scoreDisp)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 3
+      }
+    }, [0, 1, 2].map(n => /*#__PURE__*/React.createElement("div", {
+      key: n,
+      style: {
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: n < hpDisp ? T.t2 : T.line2,
+        transition: "background .25s"
+      }
+    }))))), /*#__PURE__*/React.createElement(ProgBar, {
+      left: `${pct}%`,
+      right: `${qi + 1} / ${total}`,
+      pct: pct
+    }), /*#__PURE__*/React.createElement("div", {
+      ref: scrollRef,
+      style: scrollFill
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px 15px 0"
+      }
+    }, /*#__PURE__*/React.createElement(WordCard, {
+      word: v[0],
+      meaning: v[1],
+      category: v[3],
+      state: ""
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "8px 15px 0"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.bg2,
+        border: `1px solid ${T.line}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        marginBottom: 9
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...catLbl,
+        marginBottom: 5
+      }
+    }, "\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E04\u0E33\u0E20\u0E32\u0E29\u0E32\u0E2D\u0E31\u0E07\u0E01\u0E24\u0E29"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        lineHeight: 1.5,
+        color: T.t1
+      }
+    }, "\"", v[1], "\"")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 9
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        ...catLbl,
+        marginRight: 6
+      }
+    }, "Synonyms"), v[2].split(", ").map(s => /*#__PURE__*/React.createElement("span", {
+      key: s,
+      style: synTag
+    }, s.trim()))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      ref: inputRef,
+      value: typed,
+      onChange: e => setTyped(e.target.value),
+      onKeyDown: e => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitType();
+        }
+      },
+      disabled: answered,
+      placeholder: "Type the English word\u2026",
+      autoComplete: "off",
+      autoCorrect: "off",
+      autoCapitalize: "off",
+      spellCheck: "false",
+      style: {
+        flex: 1,
+        height: 48,
+        padding: "0 14px",
+        background: T.bg2,
+        border: `1px solid ${answered ? fb?.ok ? T.green : T.red : T.line2}`,
+        borderRadius: 10,
+        color: answered ? fb?.ok ? T.greenFg : T.redFg : T.t1,
+        fontSize: 16,
+        outline: "none",
+        WebkitAppearance: "none",
+        caretColor: T.t1,
+        transition: "border-color .15s, color .15s"
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: submitType,
+      disabled: answered,
+      style: {
+        width: 48,
+        height: 48,
+        borderRadius: 10,
+        background: T.bg2,
+        border: `1px solid ${T.line2}`,
+        color: T.t2,
+        fontSize: 15,
+        cursor: "pointer",
+        WebkitAppearance: "none"
+      }
+    }, "\u21B5")), !answered && !hintUsed && /*#__PURE__*/React.createElement("button", {
+      onClick: showHint,
+      style: {
+        background: "none",
+        border: "none",
+        padding: "3px 0",
+        fontSize: 12,
+        color: T.t3,
+        textDecoration: "underline",
+        cursor: "pointer",
+        display: "block"
+      }
+    }, "Show hint"), fb && /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderRadius: 10,
+        padding: "10px 13px",
+        fontSize: 13,
+        lineHeight: 1.55,
+        marginTop: 8,
+        marginBottom: 8,
+        background: fb.ok ? T.greenT : T.redT,
+        border: `1px solid ${fb.ok ? T.green : T.red}`,
+        color: fb.ok ? T.greenFg : T.redFg,
+        animation: "fbi .18s ease"
+      }
+    }, fb.msg), showEx && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...catLbl,
+        marginBottom: 5
+      }
+    }, "Example"), /*#__PURE__*/React.createElement("div", {
+      style: exBox,
+      dangerouslySetInnerHTML: {
+        __html: hlWord(v[4], v[0])
+      }
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 96
+      }
+    })), answered && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: "10px 16px 20px",
+        background: `linear-gradient(to top, ${T.bg} 55%, transparent)`
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...btn(true),
+        marginTop: 0
+      },
+      onClick: nextType
+    }, qi + 1 >= pool.length || hpRef.current <= 0 ? "See Results →" : "Next →")), /*#__PURE__*/React.createElement("style", null, `@keyframes fbi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`));
   }
 
   // ── RESULT ──
   if (screen === "result") {
     const tot = pool.length;
-    const c   = cor.length;
+    const c = cor.length;
     const pct = tot > 0 ? Math.round(c / tot * 100) : 0;
     let grade, msg;
-    if      (pct >= 90) { grade = "Excellent";    msg = `${c}/${tot} correct (${pct}%) — Outstanding`; }
-    else if (pct >= 70) { grade = "Well done";     msg = `${c}/${tot} correct (${pct}%) — Good job`; }
-    else if (pct >= 50) { grade = "Keep going";    msg = `${c}/${tot} correct (${pct}%) — Keep practicing`; }
-    else                { grade = "Review needed"; msg = `${c}/${tot} correct (${pct}%) — Try flashcard first`; }
-
-    return (
-      <div style={{ ...fullPage, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:14, padding:"40px 18px 40px" }}>
-          <div style={{ fontSize:60, fontWeight:600, ...mono, lineHeight:1, animation:"popin .4s ease" }}>
-            {scoreDisp}
-          </div>
-          <div style={{ fontSize:15, fontWeight:500, color:T.t1 }}>{grade}</div>
-          <div style={{ fontSize:13, color:T.t2, textAlign:"center" }}>{msg}</div>
-
-          <div style={{ width:"100%", background:T.bg2, border:`1px solid ${T.line}`, borderRadius:12, padding:14 }}>
-            <div style={{ ...catLbl, marginBottom:9 }}>Words this session</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-              {pool.map(({ v }) => (
-                <span key={v[0]} style={{
-                  fontSize:11, padding:"3px 9px", borderRadius:5,
-                  background: cor.includes(v[0]) ? T.greenT : wrg.includes(v[0]) ? T.redT : T.bg3,
-                  border:`1px solid ${cor.includes(v[0]) ? T.green : wrg.includes(v[0]) ? T.red : T.line2}`,
-                  color: cor.includes(v[0]) ? T.greenFg : wrg.includes(v[0]) ? T.redFg : T.t2,
-                }}>
-                  {v[0]}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ width:"100%" }}>
-            {wrg.length > 0 && (
-              <button style={btn(false)} onClick={retryWrong}>
-                Retry {wrg.length} wrong words
-              </button>
-            )}
-            <button style={btn(true)} onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>
-              Back to Home
-            </button>
-          </div>
-        </div>
-        <style>{`@keyframes popin{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}`}</style>
-      </div>
-    );
+    if (pct >= 90) {
+      grade = "Excellent";
+      msg = `${c}/${tot} correct (${pct}%) — Outstanding`;
+    } else if (pct >= 70) {
+      grade = "Well done";
+      msg = `${c}/${tot} correct (${pct}%) — Good job`;
+    } else if (pct >= 50) {
+      grade = "Keep going";
+      msg = `${c}/${tot} correct (${pct}%) — Keep practicing`;
+    } else {
+      grade = "Review needed";
+      msg = `${c}/${tot} correct (${pct}%) — Try flashcard first`;
+    }
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...fullPage,
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 14,
+        padding: "40px 18px 40px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 60,
+        fontWeight: 600,
+        ...mono,
+        lineHeight: 1,
+        animation: "popin .4s ease"
+      }
+    }, scoreDisp), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 500,
+        color: T.t1
+      }
+    }, grade), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: T.t2,
+        textAlign: "center"
+      }
+    }, msg), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%",
+        background: T.bg2,
+        border: `1px solid ${T.line}`,
+        borderRadius: 12,
+        padding: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...catLbl,
+        marginBottom: 9
+      }
+    }, "Words this session"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 5
+      }
+    }, pool.map(({
+      v
+    }) => /*#__PURE__*/React.createElement("span", {
+      key: v[0],
+      style: {
+        fontSize: 11,
+        padding: "3px 9px",
+        borderRadius: 5,
+        background: cor.includes(v[0]) ? T.greenT : wrg.includes(v[0]) ? T.redT : T.bg3,
+        border: `1px solid ${cor.includes(v[0]) ? T.green : wrg.includes(v[0]) ? T.red : T.line2}`,
+        color: cor.includes(v[0]) ? T.greenFg : wrg.includes(v[0]) ? T.redFg : T.t2
+      }
+    }, v[0])))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%"
+      }
+    }, wrg.length > 0 && /*#__PURE__*/React.createElement("button", {
+      style: btn(false),
+      onClick: retryWrong
+    }, "Retry ", wrg.length, " wrong words"), /*#__PURE__*/React.createElement("button", {
+      style: btn(true),
+      onClick: () => {
+        setScreen("home");
+        saveNow(known, review, selCats, {
+          scr: "home"
+        });
+      }
+    }, "Back to Home"))), /*#__PURE__*/React.createElement("style", null, `@keyframes popin{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}`));
   }
-
   return null;
 }
-
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(React.createElement(App));
 
