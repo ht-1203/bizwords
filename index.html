@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0A0A0A">
+<title>BizWords</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html{background:#0A0A0A;height:-webkit-fill-available;overscroll-behavior:none}
+body{
+  min-height:100vh;min-height:-webkit-fill-available;min-height:100dvh;
+  background:#0A0A0A;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;font-size:16px;
+}
+::-webkit-scrollbar{width:0}
+input,button{font-family:inherit;-webkit-appearance:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// VOCAB: [word, th, synonyms, category, example]
+const VOCAB=[
+["Achieve","สำเร็จ","Accomplish, Attain","Business","She worked hard to achieve her sales target this quarter."],
+["Adjust","ปรับเปลี่ยน","Modify, Adapt","Business","We need to adjust our strategy based on customer feedback."],
+["Approve","อนุมัติ","Authorize, Endorse","Business","The manager approved the budget for the new project."],
+["Assess","ประเมิน","Appraise, Evaluate","Business","We assess employee performance every six months."],
+["Assign","มอบหมาย","Allocate, Delegate","Business","The director assigned a new task to the team."],
+["Cancel","ยกเลิก","Terminate, Call off","Business","They had to cancel the meeting due to the storm."],
+["Clarify","อธิบายให้ชัดเจน","Elaborate, Explain","Business","Please clarify the terms of the contract."],
+["Collaborate","ร่วมมือ","Cooperate, Partner","Business","Both departments collaborated to launch the new service."],
+["Confirm","ยืนยัน","Validate, Verify","Business","Please confirm your attendance before Friday."],
+["Consult","ให้คำปรึกษา","Advise, Confer","Business","We consulted a lawyer before signing the deal."],
+["Coordinate","ประสานงาน","Integrate, Bring together","Business","She coordinates all meetings between the teams."],
+["Demonstrate","สาธิต","Exhibit, Show","Business","He demonstrated the new software to the client."],
+["Develop","พัฒนา","Improve, Upgrade","Business","The company plans to develop a new product line."],
+["Distribute","แจกจ่าย","Deliver, Give out","Business","They distribute reports to all department heads."],
+["Enhance","ทำให้ดีขึ้น","Heighten, Boost","Business","New tools can enhance employee productivity."],
+["Expand","ขยาย","Enlarge, Grow","Business","The company plans to expand into Asian markets."],
+["Implement","ดำเนินการ","Execute, Enforce","Business","We will implement the new policy next month."],
+["Increase","เพิ่มขึ้น","Accrue, Raise","Business","Sales increased by 20% this year."],
+["Initiate","เริ่มต้น","Start, Commence","Business","He initiated a new training program for staff."],
+["Investigate","ตรวจสอบ","Examine, Inspect","Business","The team investigated the source of the error."],
+["Launch","เปิดตัว","Introduce, Release","Business","They launched the product at a global conference."],
+["Manage","บริหารจัดการ","Handle, Supervise","Business","She manages a team of fifteen people."],
+["Negotiate","เจรจา","Bargain, Discuss","Business","Both parties negotiated the contract terms."],
+["Organize","จัดระบบ","Arrange, Systemize","Business","He organized all the files in the new system."],
+["Oversee","ควบคุมดูแล","Supervise, Monitor","Business","The director oversees all daily operations."],
+["Propose","เสนอแนะ","Suggest, Recommend","Business","She proposed a new marketing approach."],
+["Provide","จัดหา","Offer, Supply","Business","The company provides free training to all employees."],
+["Reduce","ลดลง","Decrease, Lower","Business","We need to reduce operational costs this year."],
+["Register","ลงทะเบียน","Enroll, Sign up","Business","Please register your account on the portal."],
+["Reject","ปฏิเสธ","Decline, Refuse","Business","The board rejected the initial proposal."],
+["Require","ต้องการ","Demand, Necessitate","Business","This role requires strong communication skills."],
+["Resolve","แก้ไข","Settle, Solve","Business","The team resolved the issue within one day."],
+["Restructure","ปรับโครงสร้าง","Reorganize, Reform","Business","The company restructured its sales division."],
+["Terminate","ยุติ / ไล่ออก","End, Dismiss","Business","The contract was terminated due to a breach."],
+["Verify","ตรวจสอบความถูกต้อง","Confirm, Authenticate","Business","Please verify your identity before proceeding."],
+["Agreement","ข้อตกลง","Accord, Contract","Business","Both sides signed a formal agreement."],
+["Approval","การอนุมัติ","Endorsement, Consent","Business","The project needs board approval before launch."],
+["Asset","สินทรัพย์","Property, Resource","Business","The new office building is a major asset."],
+["Campaign","แคมเปญ","Initiative, Strategy","Business","The marketing campaign increased brand awareness."],
+["Client","ลูกค้า","Customer, Patron","Business","We need to satisfy every client's expectations."],
+["Company","บริษัท","Firm, Corporation","Business","The company was founded in 2005."],
+["Competitor","คู่แข่ง","Rival, Opponent","Business","We monitor our competitor's pricing closely."],
+["Contract","สัญญา","Agreement, Deal","Business","Sign the contract before starting the project."],
+["Department","แผนก","Division, Sector","Business","The HR department handles all recruitment."],
+["Document","เอกสาร","File, Record","Business","Please submit all documents by end of day."],
+["Employee","พนักงาน","Worker, Staff","Business","Every employee received a performance review."],
+["Employer","นายจ้าง","Head, Boss","Business","The employer offered a competitive salary."],
+["Entrepreneur","ผู้ประกอบการ","Business owner, Founder","Business","She became a successful entrepreneur at age 30."],
+["Executive","ผู้บริหาร","Administrator, Director","Business","The executive team approved the annual budget."],
+["Expense","ค่าใช้จ่าย","Expenditure, Cost","Business","Travel expenses must be submitted monthly."],
+["Firm","บริษัท","Company, Corporation","Business","The law firm specializes in corporate cases."],
+["Goal","เป้าหมาย","Objective, Target","Business","Setting clear goals improves team performance."],
+["Industry","อุตสาหกรรม","Sector, Field","Business","The technology industry is growing rapidly."],
+["Investor","นักลงทุน","Shareholder, Backer","Business","The investor funded the startup with $1 million."],
+["Job","งาน","Employment, Occupation","Business","She found a new job in the finance sector."],
+["Manager","ผู้จัดการ","Supervisor, Executive","Business","The manager reviewed all monthly reports."],
+["Market","ตลาด","Industry, Commerce","Business","The company entered the European market."],
+["Meeting","การประชุม","Conference, Gathering","Business","The weekly meeting starts at 9 a.m."],
+["Negotiation","การเจรจา","Discussion, Bargaining","Business","Negotiations with the supplier took two weeks."],
+["Office","สำนักงาน","Workplace, Headquarters","Business","The office is located in the city center."],
+["Organization","องค์กร","Establishment, Institution","Business","The organization supports over 500 employees."],
+["Partner","หุ้นส่วน","Associate, Collaborator","Business","We are looking for a business partner in Asia."],
+["Payment","การชำระเงิน","Remuneration, Transaction","Business","Payment is due within 30 days of invoice."],
+["Position","ตำแหน่งงาน","Job title, Role","Business","She applied for the senior manager position."],
+["Product","สินค้า","Merchandise, Goods","Business","The new product launched successfully last week."],
+["Profit","กำไร","Benefit, Gain","Business","The company reported a 15% profit increase."],
+["Promotion","การเลื่อนตำแหน่ง","Advancement, Raise","Business","He received a promotion after two years."],
+["Proposal","ข้อเสนอ","Suggestion, Plan","Business","She submitted a detailed proposal to the board."],
+["Qualification","คุณสมบัติ","Credential, Requirement","Business","A degree is a key qualification for this role."],
+["Reception","แผนกต้อนรับ","Front desk, Lobby","Business","Please collect your badge at reception."],
+["Report","รายงาน","Summary, Account","Business","The monthly report shows strong results."],
+["Requirement","ข้อกำหนด","Necessity, Condition","Business","Meeting all requirements is mandatory."],
+["Resignation","การลาออก","Departure, Quit","Business","She submitted her resignation letter last Friday."],
+["Resource","ทรัพยากร","Asset, Supply","Business","Time is our most valuable resource."],
+["Responsibility","หน้าที่","Obligation, Duty","Business","Each employee must understand their responsibilities."],
+["Revenue","รายได้","Income, Earnings","Business","Annual revenue grew by 30% this year."],
+["Sector","ภาคส่วนธุรกิจ","Industry, Field","Business","The public sector employs many graduates."],
+["Schedule","ตารางเวลา","Timetable, Plan","Business","The project schedule was approved last Monday."],
+["Service","บริการ","Assistance, Support","Business","Customer service is available 24 hours."],
+["Stock","สินค้าคงคลัง","Inventory, Supply","Business","We need to reorder stock before it runs out."],
+["Strategy","กลยุทธ์","Tactic, Plan","Business","A strong strategy is key to business growth."],
+["Supervisor","ผู้ควบคุม","Manager, Overseer","Business","Report any issues to your supervisor first."],
+["Task","งานที่ได้รับมอบหมาย","Duty, Assignment","Business","Each team member was given a specific task."],
+["Team","ทีมงาน","Group, Crew","Business","The team completed the project ahead of schedule."],
+["Technology","เทคโนโลยี","Innovation, Advancement","Business","New technology is changing how we work."],
+["Trainee","ผู้ฝึกงาน","Apprentice, Intern","Business","The trainee shadowed the senior analyst all week."],
+["Training","การฝึกอบรม","Instruction, Coaching","Business","All staff must attend the annual training."],
+["Transaction","ธุรกรรม","Business deal, Exchange","Business","Every financial transaction is recorded."],
+["Vacancy","ตำแหน่งว่าง","Opening, Position","Business","There is a vacancy in the finance department."],
+["Workshop","การอบรมเชิงปฏิบัติการ","Seminar, Session","Business","We held a leadership workshop last Thursday."],
+["Accumulate","สะสม","Gather, Collect","Finance","The company accumulated significant debt over time."],
+["Allocate","จัดสรร","Distribute, Assign","Finance","The board allocated funds to each department."],
+["Analyze","วิเคราะห์","Examine, Assess","Finance","The team analyzed quarterly financial data."],
+["Appraise","ประเมินค่า","Evaluate, Value","Finance","An expert appraised the property's market value."],
+["Audit","ตรวจสอบบัญชี","Inspect, Review","Finance","External auditors audit our accounts each year."],
+["Balance","ปรับสมดุล","Reconcile, Equalize","Finance","The accountant balanced the books by end of day."],
+["Borrow","ยืม","Take on credit, Loan","Finance","The startup borrowed funds from the bank."],
+["Budget","จัดทำงบประมาณ","Allocate, Plan","Finance","We budget carefully for every annual project."],
+["Calculate","คำนวณ","Compute, Estimate","Finance","She calculated the total cost of the project."],
+["Charge","เรียกเก็บเงิน","Invoice, Bill","Finance","The vendor charged us for the full service."],
+["Compensate","ชดเชย","Reimburse, Repay","Finance","The firm compensated employees for overtime."],
+["Consolidate","รวมบัญชี","Combine, Merge","Finance","They consolidated three accounts into one."],
+["Cut","ลดค่าใช้จ่าย","Decrease, Reduce","Finance","The company cut costs by 10% this quarter."],
+["Deposit","ฝากเงิน","Put in, Place","Finance","Please deposit the payment into the account."],
+["Determine","กำหนด","Establish, Decide","Finance","We need to determine the budget by Friday."],
+["Disburse","จ่ายเงิน","Pay out, Expend","Finance","The bank disbursed the loan within 48 hours."],
+["Donate","บริจาค","Contribute, Give","Finance","The company donated to local charities."],
+["Earn","ได้รับรายได้","Receive, Gain","Finance","She earns a competitive salary at her firm."],
+["Estimate","ประมาณค่า","Approximate, Predict","Finance","We estimated the total project cost at $50,000."],
+["Exchange","แลกเปลี่ยน","Trade, Swap","Finance","He exchanged the currency at the airport."],
+["Exceed","เกิน","Surpass, Outstrip","Finance","Sales exceeded our target by 25%."],
+["Exempt","ยกเว้นภาษี","Excuse, Free","Finance","Non-profit organizations are exempt from tax."],
+["Expend","ใช้จ่าย","Spend, Use up","Finance","The team expended the full training budget."],
+["File","ยื่นเอกสาร","Register, Submit","Finance","You must file your tax return by April 30."],
+["Finance","ให้ทุน","Sponsor, Fund","Finance","The bank agreed to finance the new project."],
+["Forecast","คาดการณ์","Predict, Project","Finance","Analysts forecast strong growth next year."],
+["Invest","ลงทุน","Put in, Fund","Finance","She invested in several technology companies."],
+["Issue","ออกเช็ค","Release, Publish","Finance","The company issued bonds to raise capital."],
+["Lend","ให้ยืม","Provide credit, Loan","Finance","The bank lends money at a fixed interest rate."],
+["Liquidate","แลกเงินสด","Sell off, Settle","Finance","They had to liquidate assets to cover losses."],
+["Minimize","ลดให้น้อยที่สุด","Reduce, Lower","Finance","We aim to minimize unnecessary expenses."],
+["Mortgage","จำนอง","Pledge, Loan","Finance","They took out a mortgage to buy their office."],
+["Owe","เป็นหนี้","Be obligated, Be in debt","Finance","The client owes us three months of payments."],
+["Pay","จ่ายเงิน","Settle, Disburse","Finance","Please pay the invoice before the due date."],
+["Purchase","ซื้อ","Acquire, Buy","Finance","The firm purchased new equipment last month."],
+["Account","บัญชี","Record, Ledger","Finance","Please check your account balance online."],
+["Accountant","นักบัญชี","Bookkeeper, Auditor","Finance","The accountant prepared the annual financial report."],
+["Assets","สินทรัพย์","Property, Holdings","Finance","The company's total assets grew by 12%."],
+["Bankruptcy","การล้มละลาย","Insolvency, Collapse","Finance","The firm filed for bankruptcy after losses."],
+["Bill","ใบเรียกเงิน","Statement, Invoice","Finance","The bill must be paid within 15 days."],
+["Bonus","โบนัส","Extra pay, Reward","Finance","Employees received a year-end bonus."],
+["Capital","เงินทุน","Investment, Funds","Finance","We need additional capital to expand operations."],
+["Cash","เงินสด","Currency, Money","Finance","Keep a cash reserve for unexpected expenses."],
+["Check","เช็คเงินสด","Payment order, Cheque","Finance","Please issue a check payable to the vendor."],
+["Collateral","หลักทรัพย์ค้ำประกัน","Guarantee, Security","Finance","The property was used as collateral for the loan."],
+["Commission","ค่าคอมมิชชั่น","Percentage, Fee","Finance","Sales staff earn a 5% commission per deal."],
+["Credit","เครดิต","Loan, Trust","Finance","Apply for a credit limit increase online."],
+["Currency","สกุลเงิน","Banknotes, Money","Finance","The exchange rate affects foreign currency."],
+["Debt","หนี้","Obligation, Liability","Finance","Managing debt is critical for financial health."],
+["Deduction","การหักค่าใช้จ่าย","Subtraction, Reduction","Finance","Tax deductions reduce your total taxable income."],
+["Dividend","เงินปันผล","Profit share, Return","Finance","Shareholders received a quarterly dividend."],
+["Fee","ค่าธรรมเนียม","Payment, Charge","Finance","There is a processing fee of 200 baht."],
+["Financial statement","งบการเงิน","Summary, Report","Finance","Review the financial statement before the meeting."],
+["Grant","เงินช่วยเหลือ","Subsidy, Funding","Finance","The startup received a government grant."],
+["Gross income","รายได้รวม","Total earnings, Revenue","Finance","Gross income before deductions was 2 million."],
+["Inflation","เงินเฟ้อ","Price increase, Devaluation","Finance","High inflation reduces purchasing power."],
+["Insurance","ประกันภัย","Protection, Coverage","Finance","All employees are covered by health insurance."],
+["Interest","ดอกเบี้ย","Return, Rate","Finance","The loan carries a 6% annual interest rate."],
+["Pension","เงินบำนาญ","Retirement fund, Allowance","Finance","She contributes monthly to her pension fund."],
+["Portfolio","พอร์ตการลงทุน","Investment collection, Holdings","Finance","He manages a diverse investment portfolio."],
+["Rate","อัตราดอกเบี้ย","Percentage, Charge","Finance","The interest rate was raised by the central bank."],
+["Receipt","ใบเสร็จ","Proof of payment, Slip","Finance","Keep the receipt for your expense claim."],
+["Reimbursement","การชดเชยเงิน","Compensation, Refund","Finance","Submit claims for travel reimbursement."],
+["Risk","ความเสี่ยง","Uncertainty, Hazard","Finance","Every investment carries a degree of risk."],
+["Savings","เงินออม","Reserves, Deposits","Finance","She deposits 20% of her salary into savings."],
+["Tax","ภาษี","Levy, Duty","Finance","Corporate tax is filed annually."],
+["Wealth","ความมั่งคั่ง","Fortune, Assets","Finance","Building wealth requires long-term planning."],
+["Withdrawal","การถอนเงิน","Cash out, Removal","Finance","A withdrawal fee applies after three times."],
+["Accommodate","อำนวยความสะดวก","Adjust, Provide","Service","The hotel accommodated all special requests."],
+["Assist","ช่วยเหลือ","Support, Help","Service","Staff are trained to assist guests at all times."],
+["Book","จอง","Schedule, Reserve","Service","You can book a table online or by phone."],
+["Clean","ทำความสะอาด","Sanitize, Tidy up","Service","Rooms are cleaned daily by housekeeping staff."],
+["Fix","ซ่อมแซม / แก้ไข","Resolve, Repair","Service","Maintenance fixed the broken air conditioning."],
+["Greet","ทักทาย","Acknowledge, Welcome","Service","Staff always greet guests with a warm smile."],
+["Guide","นำทาง","Direct, Lead","Service","A concierge guided us to the conference room."],
+["Host","เป็นเจ้าภาพ","Receive guests, Entertain","Service","The manager hosted the corporate dinner event."],
+["Inform","แจ้ง","Notify, Tell","Service","Please inform reception of your late check-out."],
+["Inspect","ตรวจสอบ","Examine, Review","Service","The supervisor inspects rooms before check-in."],
+["Introduce","แนะนำตัว","Familiarize, Present","Service","She introduced herself and explained the service."],
+["Offer","เสนอ","Provide, Suggest","Service","The concierge offered a restaurant recommendation."],
+["Order","สั่งสินค้า","Purchase, Request","Service","Guests can order room service until midnight."],
+["Prepare","เตรียม","Get ready, Setup","Service","The kitchen prepares meals two hours before service."],
+["Present","นำเสนอ","Show, Display","Service","The team presented the service plan to management."],
+["Process","ดำเนินการ","Proceed, Handle","Service","We process all refund requests within 48 hours."],
+["Provide","ให้บริการ","Supply, Offer","Service","The hotel provides complimentary breakfast."],
+["Recommend","แนะนำ","Suggest, Endorse","Service","I recommend the deluxe suite for your stay."],
+["Refer","ส่งต่อ","Transfer, Direct","Service","The receptionist referred me to the duty manager."],
+["Refund","คืนเงิน","Reimburse, Repay","Service","Refunds are processed within 5 business days."],
+["Remain","ยังคงอยู่","Continue, Stay","Service","One staff member remains at the desk overnight."],
+["Replace","เปลี่ยนใหม่","Exchange, Substitute","Service","We will replace any damaged items immediately."],
+["Request","ร้องขอ","Ask for, Demand","Service","Guests may request extra pillows anytime."],
+["Respond","ตอบกลับ","Answer, Reply","Service","Our team responds to emails within one hour."],
+["Serve","ให้บริการ","Provide for, Assist","Service","The restaurant serves breakfast from 6 a.m."],
+["Suggest","เสนอแนะ","Recommend, Propose","Service","The guide suggested the best local restaurants."],
+["Accommodation","ที่พัก","Lodging, Housing","Service","The resort offers luxury accommodation packages."],
+["Amenity","สิ่งอำนวยความสะดวก","Convenience, Facility","Service","The hotel offers amenities such as a pool and gym."],
+["Booking","การจอง","Reservation, Appointment","Service","Your booking is confirmed for three nights."],
+["Cancellation","การยกเลิก","Termination, Reversal","Service","Cancellation within 24 hours incurs a charge."],
+["Check-in","การเช็กอิน","Registration, Arrival","Service","Check-in time is from 2 p.m. onwards."],
+["Check-out","การเช็กเอาต์","Departure, Exit","Service","Check-out must be completed before noon."],
+["Complaint","การร้องเรียน","Grievance, Objection","Service","All complaints are handled within 24 hours."],
+["Confirmation","การยืนยัน","Verification, Approval","Service","You will receive a booking confirmation by email."],
+["Delivery","การจัดส่ง","Shipment, Transport","Service","Delivery takes 3 to 5 working days."],
+["Discount","ส่วนลด","Reduction, Rebate","Service","Members receive a 15% discount on all services."],
+["Experience","ประสบการณ์","Encounter, Knowledge","Service","We aim to provide an exceptional guest experience."],
+["Feedback","ข้อเสนอแนะ","Response, Review","Service","We value your feedback to improve our service."],
+["Hospitality","การบริการต้อนรับ","Friendliness, Service","Service","Thai hospitality is world-renowned."],
+["Housekeeping","งานแม่บ้าน","Maintenance, Cleaning","Service","Housekeeping will service your room at 10 a.m."],
+["Inquiry","การสอบถาม","Question, Request","Service","Submit your inquiry via the contact form."],
+["Itinerary","กำหนดการเดินทาง","Schedule, Agenda","Service","The tour guide handed us the full itinerary."],
+["Menu","เมนู","Options, List","Service","The menu offers both local and international cuisine."],
+["Occupancy","การเข้าพัก","Residence, Use","Service","The hotel reached 95% occupancy last weekend."],
+["Policy","นโยบาย","Regulation, Rule","Service","Please read the cancellation policy carefully."],
+["Promotion","โปรโมชั่น","Advertisement, Discount","Service","The hotel runs a summer promotion every year."],
+["Room service","บริการอาหารในห้อง","In-room dining, Guest service","Service","Room service is available 24 hours a day."],
+["Tour","ทัวร์","Excursion, Trip","Service","We offer guided tours of the historic district."],
+["Valet","พนักงานรับจอดรถ","Parking service, Attendant","Service","Valet parking is complimentary for all guests."],
+["Voucher","บัตรกำนัล","Certificate, Coupon","Service","Present your voucher at check-in to redeem."],
+["Waiting list","รายชื่อรอ","Standby, Queue","Service","You have been added to the waiting list."],
+["Walk-in","ลูกค้าที่มาโดยไม่ได้นัด","Unscheduled visit, Drop-in","Service","Walk-in guests are welcome if rooms are available."],
+["Wi-Fi","อินเทอร์เน็ตไร้สาย","Wireless internet, Connection","Service","Complimentary Wi-Fi is available throughout."],
+["Guesthouse","เกสต์เฮาส์","Lodge, Inn","Service","The guesthouse offers a quiet, homely stay."],
+["Concierge","พนักงานอำนวยความสะดวก","Assistant, Hotel staff","Service","The concierge arranged a private transfer."],
+["Hostel","ที่พักราคาประหยัด","Budget lodging, Dormitory","Service","The hostel is popular with backpackers."],
+["Apply","สมัครงาน","Request, Submit","Jobs","She applied for the senior accountant position."],
+["Attend","เข้าร่วม","Participate, Join","Jobs","All staff must attend the quarterly review."],
+["Complete","ทำให้เสร็จ","Conclude, Finish","Jobs","Please complete the onboarding form by Monday."],
+["Employ","จ้างงาน","Recruit, Hire","Jobs","The company employs over 500 people globally."],
+["Retire","เกษียณอายุ","Stop working, Leave job","Jobs","He retired after 35 years with the company."],
+["Satisfy","ทำให้พอใจ","Meet requirements, Fulfill","Jobs","The candidate satisfied all job requirements."],
+["Undertake","รับหน้าที่","Accept responsibility, Take on","Jobs","She undertook the project management role."],
+["Work","ทำงาน","Perform duties, Labor","Jobs","He works remotely three days per week."],
+["Applicant","ผู้สมัครงาน","Job seeker, Candidate","Jobs","Over 200 applicants applied for the role."],
+["Career","อาชีพ","Occupation, Profession","Jobs","She built a successful career in finance."],
+["Colleague","เพื่อนร่วมงาน","Coworker, Teammate","Jobs","My colleague helped me prepare for the meeting."],
+["Job description","คำบรรยายงาน","Responsibilities, Role","Jobs","Read the job description carefully before applying."],
+["Job offer","ข้อเสนอการทำงาน","Employment proposal, Hiring offer","Jobs","He accepted the job offer the following day."],
+["Part-time","งานพาร์ทไทม์","Temporary, Half-time","Jobs","She works part-time while studying."],
+["Resume","ประวัติย่อ","Curriculum Vitae, CV","Jobs","Update your resume before sending applications."],
+["Shift","กะการทำงาน","Work period, Work hours","Jobs","The night shift starts at 10 p.m."],
+["Skill","ทักษะ","Expertise, Ability","Jobs","Strong analytical skills are required."],
+["Teamwork","การทำงานเป็นทีม","Cooperation, Collaboration","Jobs","Teamwork is essential in a fast-paced environment."],
+["Unemployed","ว่างงาน","Out of work, Jobless","Jobs","He was unemployed for three months."],
+["Workload","ภาระงาน","Job load, Duties","Jobs","Managing workload is key to avoiding burnout."],
+["Workplace culture","วัฒนธรรมในที่ทำงาน","Office environment, Work atmosphere","Jobs","A positive workplace culture improves retention."],
+["Full-time","งานเต็มเวลา","Permanent, Full-day","Jobs","She transitioned from part-time to full-time."],
+["Freelancer","ฟรีแลนซ์","Independent worker, Contractor","Jobs","He works as a freelancer in graphic design."],
+["Union","สหภาพแรงงาน","Worker group, Labor group","Jobs","The union negotiated a higher minimum wage."],
+["Retirement","การเกษียณ","Withdrawal from work, Pension","Jobs","She started planning for retirement at 40."],
+["Salary increase","การขึ้นเงินเดือน","Raise, Pay hike","Jobs","Employees received a salary increase of 5%."],
+["Performance","ผลงาน","Work results, Achievement","Jobs","Strong performance leads to career advancement."],
+["Probation","ระยะเวลาทดลองงาน","Evaluation period, Trial period","Jobs","The probation period is three months."],
+["Salary negotiation","การเจรจาเรื่องเงิน","Wage negotiation, Pay discussion","Jobs","Salary negotiation is a key part of job offers."],
+["Employer benefits","สวัสดิการจ้างงาน","Employee benefits, Job perks","Jobs","Employer benefits include health insurance."],
+["Employment contract","สัญญาจ้างงาน","Work agreement, Job contract","Jobs","Sign the employment contract before starting."],
+["Sick leave","ลาป่วย","Medical leave, Health leave","Jobs","Employees are entitled to 30 days sick leave."],
+["Paid time off","วันหยุดพร้อมรับเงิน","Vacation time, Paid leave","Jobs","She used her paid time off for a vacation."],
+["Overtime","เวลาทำงานล่วงเวลา","Extended work hours, Extra hours","Jobs","Overtime pay is 1.5 times the regular rate."],
+["Freelance work","งานฟรีแลนซ์","Self-employed work, Independent work","Jobs","Freelance work offers flexible hours."],
+["Job security","ความมั่นคงในงาน","Employment stability, Job safety","Jobs","Job security is a priority for many workers."],
+["Managerial position","ตำแหน่งผู้บริหาร","Executive role, Supervisory role","Jobs","She was promoted to a managerial position."],
+["Workforce","แรงงาน","Labor force, Employees","Jobs","The workforce consists of over 1,000 people."],
+["Networking","เครือข่าย","Socializing, Connecting","Jobs","Networking events help build professional contacts."],
+["Job market","ตลาดแรงงาน","Employment market, Labor market","Jobs","The job market is highly competitive this year."],
+["Office supplies","อุปกรณ์สำนักงาน","Work materials, Stationery","Jobs","Order office supplies from the approved vendor."],
+["Team leader","หัวหน้าทีม","Group leader, Supervisor","Jobs","The team leader assigned tasks to each member."],
+["Advertise","โฆษณา","Publicize, Promote","Marketing","The brand advertises on social media platforms."],
+["Sell","ขาย","Offer, Trade","Marketing","The sales team sells to corporate clients."],
+["Target","มุ่งเป้า","Direct, Aim","Marketing","We target professionals aged 25 to 40."],
+["Pitch","นำเสนอ","Present, Propose","Marketing","She pitched the idea to potential investors."],
+["Attract","ดึงดูด","Appeal, Draw","Marketing","Good branding attracts the right customers."],
+["Brand","ทำแบรนด์","Trademark, Label","Marketing","They rebranded to appeal to younger audiences."],
+["Convince","โน้มน้าว","Persuade, Induce","Marketing","The salesperson convinced the client to upgrade."],
+["Influence","มีอิทธิพล","Affect, Sway","Marketing","Reviews heavily influence buying decisions."],
+["Research","สำรวจ","Survey, Poll","Marketing","We research market trends before each launch."],
+["Focus","มุ่งเน้น","Direct attention, Concentrate","Marketing","The campaign focused on product benefits."],
+["Customize","ปรับแต่ง","Modify, Tailor","Marketing","We customize offers based on customer data."],
+["Drive","ผลักดัน","Encourage, Propel","Marketing","Promotions drive higher sales volume."],
+["Close","ปิดการขาย","Conclude, Finalize","Marketing","He closed the deal after three meetings."],
+["Sell out","ขายหมด","Out of stock, Run out","Marketing","The limited edition product sold out in hours."],
+["Outperform","ทำได้ดีกว่า","Surpass, Excel","Marketing","Our team outperformed competitors this quarter."],
+["Overcome","เอาชนะ","Conquer, Beat","Marketing","We overcame budget challenges to meet our goal."],
+["Target market","กลุ่มเป้าหมาย","Consumer group, Audience","Marketing","Our target market is urban professionals."],
+["Loss","ขาดทุน","Deficit, Red","Marketing","The company reported a loss in Q3."],
+["Market share","ส่วนแบ่งตลาด","Segment, Portion","Marketing","We captured 30% market share in one year."],
+["Customer service","บริการลูกค้า","Client support, Helpdesk","Marketing","Excellent customer service builds brand loyalty."],
+["Trade show","งานแสดงสินค้า","Exhibition, Fair","Marketing","We showcased our product at the trade show."],
+["Pipeline","ช่องทางการขาย","Sales funnel, Process","Marketing","The sales pipeline shows 50 active prospects."],
+["Competition","การแข่งขัน","Rivalry, Contest","Marketing","Competition in this market is intense."],
+["Public relations","ประชาสัมพันธ์","Exposure, Publicity","Marketing","Good public relations shapes brand image."],
+["Retail","การขายปลีก","Sale, Shop","Marketing","Retail sales increased during the holiday season."],
+["Referral","การแนะนำ","Recommendation, Suggestion","Marketing","Most new clients come through referral."],
+["Conversion","การเปลี่ยนผู้เยี่ยมเป็นลูกค้า","Changeover, Switch","Marketing","The conversion rate improved after the redesign."],
+["Upselling","การขายเพิ่ม","Premium sales, Encourage","Marketing","Upselling higher-tier plans increased revenue."],
+["Bargain","การต่อรองราคา","Discount, Deal","Marketing","Customers always look for a good bargain."]
+];
+
+const CATS = ["Business","Finance","Service","Jobs","Marketing"];
+const SK = "bizwords_v6";
+
+// ── STORAGE ──
+function loadSaved() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SK) || "null");
+    if (!d) return null;
+    return {
+      known:   new Set((d.k||[]).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length)),
+      review:  new Set((d.r||[]).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length)),
+      selCats: new Set((d.c||CATS).filter(c => CATS.includes(c))),
+      screen:  ["home","flash","type"].includes(d.scr) ? d.scr : "home",
+      pool:    (d.pool||[]).filter(n => Number.isInteger(n) && n >= 0 && n < VOCAB.length),
+      qi:      (Number.isInteger(d.qi) && d.qi >= 0) ? d.qi : 0,
+      score:   (Number.isInteger(d.score) && d.score >= 0) ? d.score : 0,
+      streak:  (Number.isInteger(d.streak) && d.streak >= 0) ? d.streak : 0,
+      hp:      (Number.isInteger(d.hp) && d.hp >= 0 && d.hp <= 3) ? d.hp : 3,
+      cor:     (d.cor||[]).filter(w => typeof w === "string"),
+      wrg:     (d.wrg||[]).filter(w => typeof w === "string"),
+    };
+  } catch { return null; }
+}
+function saveNow(known, review, selCats, extra) {
+  try {
+    localStorage.setItem(SK, JSON.stringify({
+      k: [...known], r: [...review], c: [...selCats],
+      ...(extra||{}),
+    }));
+  } catch {}
+}
+
+// ── HELPERS ──
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+// Bug fix #3: use simple indexOf instead of lookbehind regex (iOS Safari compat)
+function hlWord(sentence, word) {
+  const lo = sentence.toLowerCase();
+  const lw = word.toLowerCase();
+  const idx = lo.indexOf(lw);
+  if (idx === -1) return sentence;
+  return (
+    sentence.slice(0, idx) +
+    '<strong style="color:#ECECEC;font-style:normal">' +
+    sentence.slice(idx, idx + word.length) +
+    '</strong>' +
+    sentence.slice(idx + word.length)
+  );
+}
+
+// ── WORD CARD ──
+function WordCard({ word, meaning, category, state }) {
+  const borderColor = state === "known" ? "#1E6640" : state === "review" ? "#6B2020" : "#2A2A2A";
+  return (
+    <div style={{
+      width:"100%", borderRadius:10,
+      background:"#111111",
+      border:`1px solid ${borderColor}`,
+      padding:"13px 15px",
+      transition:"border-color .2s",
+    }}>
+      <div style={{
+        fontSize:9, fontFamily:"'JetBrains Mono',monospace",
+        letterSpacing:".13em", textTransform:"uppercase",
+        color:"#3A3A3A", marginBottom:5,
+      }}>
+        {category}
+      </div>
+      <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
+        <span style={{
+          fontSize:24, fontWeight:600, color:"#ECECEC",
+          lineHeight:1.2, letterSpacing:"-.02em",
+          fontFamily:"'Inter',-apple-system,sans-serif",
+        }}>
+          {word}
+        </span>
+        <span style={{ fontSize:14, color:"#5A5A5A", lineHeight:1.3 }}>
+          {meaning}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ──
+function App() {
+  const _s = loadSaved();
+
+  const [selCats, setSelCats] = useState(_s?.selCats || new Set(CATS));
+  const [known,   setKnown]   = useState(_s?.known   || new Set());
+  const [review,  setReview]  = useState(_s?.review  || new Set());
+
+  // Restore screen — if was mid-typing rebuild pool from saved indices
+  const initScreen = _s?.screen || "home";
+  const initPool   = _s?.pool?.length
+    ? _s.pool.map(i => ({ v: VOCAB[i], i })).filter(x => x.v)
+    : [];
+  const initQi     = Math.min(_s?.qi || 0, Math.max(0, initPool.length - 1));
+
+  const [screen,   setScreen]   = useState(initScreen);
+  const [fcData,   setFcData]   = useState(() => {
+    // Restore flashcard list for flash screen
+    if (initScreen === "flash") {
+      const cats = _s?.selCats || new Set(CATS);
+      return VOCAB.map((v,i)=>({v,i})).filter(({v})=>cats.has(v[3]));
+    }
+    return [];
+  });
+  const [pool,     setPool]     = useState(initPool);
+  const [qi,       setQi]       = useState(initQi);
+
+  const scoreRef  = useRef(_s?.score  || 0);
+  const streakRef = useRef(_s?.streak || 0);
+  const hpRef     = useRef(_s?.hp     ?? 3);
+  const [scoreDisp,  setScoreDisp]  = useState(_s?.score  || 0);
+  const [streakDisp, setStreakDisp] = useState(_s?.streak || 0);
+  const [hpDisp,     setHpDisp]     = useState(_s?.hp     ?? 3);
+  const [cor,      setCor]      = useState(_s?.cor || []);
+  const [wrg,      setWrg]      = useState(_s?.wrg || []);
+  const [typed,    setTyped]    = useState("");
+  const [answered, setAnswered] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [fb,       setFb]       = useState(null);
+  const [showEx,   setShowEx]   = useState(false);
+  const inputRef  = useRef(null);
+  const scrollRef = useRef(null);
+
+  // Bug fix #8: visibilitychange with stable ref
+  const stateRef = useRef({ known, review, selCats });
+  useEffect(() => { stateRef.current = { known, review, selCats }; }, [known, review, selCats]);
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === "hidden") {
+        const { known, review, selCats } = stateRef.current;
+        saveNow(known, review, selCats);
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, []);
+
+  // filtered vocab — always computed from current state
+  const fv = useCallback((kn, rv, sc) => {
+    const cats = sc || selCats;
+    return VOCAB.map((v, i) => ({ v, i })).filter(({ v }) => cats.has(v[3]));
+  }, [selCats]);
+
+  const all = fv(known, review, selCats);
+  const knN = all.filter(({ i }) => known.has(i)).length;
+  const rvN = all.filter(({ i }) => review.has(i)).length;
+
+  // ── FLASHCARD ──
+  function startFlash(sc) {
+    const cats = sc || selCats;
+    const data = shuffle(VOCAB.map((v, i) => ({ v, i })).filter(({ v }) => cats.has(v[3])));
+    setFcData(data);
+    setScreen("flash");
+    saveNow(known, review, cats, { scr:"flash" });
+  }
+
+  function markCard(i, isKnown) {
+    const nk = new Set(known), nr = new Set(review);
+    if (isKnown) { nk.add(i); nr.delete(i); } else { nr.add(i); nk.delete(i); }
+    setKnown(nk); setReview(nr);
+    saveNow(nk, nr, selCats, { scr:"flash" });
+  }
+
+  // ── TYPING ──
+  // Bug fix #1 & #5: pass fresh state into startType
+  function startType(rvOnly, freshKnown, freshReview, freshSelCats) {
+    const nk  = freshKnown   || known;
+    const nr  = freshReview  || review;
+    const sc  = freshSelCats || selCats;
+    const base = VOCAB.map((v, i) => ({ v, i })).filter(({ v }) => sc.has(v[3]));
+    let p = rvOnly ? base.filter(({ i }) => nr.has(i)) : base;
+    if (!p.length) p = base;
+    const shuffled = shuffle(p);
+    setPool(shuffled);
+    setQi(0);
+    scoreRef.current  = 0; streakRef.current = 0; hpRef.current = 3;
+    setScoreDisp(0); setStreakDisp(0); setHpDisp(3);
+    setCor([]); setWrg([]);
+    setTyped(""); setAnswered(false); setHintUsed(false);
+    setFb(null); setShowEx(false);
+    setScreen("type");
+    saveNow(nk, nr, sc, {
+      scr:"type", pool:shuffled.map(x=>x.i), qi:0,
+      score:0, streak:0, hp:3, cor:[], wrg:[],
+    });
+    setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+  }
+
+  function nextType() {
+    if (hpRef.current <= 0) { setScreen("result"); saveNow(known, review, selCats, { scr:"home" }); return; }
+    const next = qi + 1;
+    if (next >= pool.length) { setScreen("result"); saveNow(known, review, selCats, { scr:"home" }); return; }
+    setQi(next);
+    setTyped(""); setAnswered(false);
+    setHintUsed(false); setFb(null); setShowEx(false);
+    // save qi so refresh returns to this question
+    saveNow(known, review, selCats, {
+      scr:"type", pool:pool.map(x=>x.i), qi:next,
+      score:scoreRef.current, streak:streakRef.current, hp:hpRef.current,
+      cor, wrg,
+    });
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    setTimeout(() => { try { inputRef.current?.focus(); } catch {} }, 400);
+  }
+
+  function submitType() {
+    if (answered || !pool[qi]) return;
+    const { v, i } = pool[qi];
+    const t = typed.trim();
+    if (!t) return;
+
+    const isOK = t.toLowerCase() === v[0].toLowerCase();
+    const nk = new Set(known), nr = new Set(review);
+
+    if (isOK) {
+      streakRef.current += 1;
+      const pts = hintUsed ? 5 : 10 * streakRef.current;
+      scoreRef.current += pts;
+      nk.add(i); nr.delete(i);
+      setCor(c => [...c, v[0]]);
+      setFb({ ok: true, msg: `Correct — ${v[0]} = ${v[1]}${streakRef.current > 1 ? `  ·  Streak ×${streakRef.current}` : ""}` });
+    } else {
+      streakRef.current = 0;
+      hpRef.current = Math.max(0, hpRef.current - 1);
+      nr.add(i); nk.delete(i);
+      setWrg(w => [...w, v[0]]);
+      setFb({ ok: false, msg: `Incorrect — answer is "${v[0]}"` });
+    }
+
+    setScoreDisp(scoreRef.current);
+    setStreakDisp(streakRef.current);
+    setHpDisp(hpRef.current);
+    setAnswered(true); setShowEx(true);
+    setKnown(nk); setReview(nr);
+    // save after each answer so refresh returns to same question (unanswered)
+    saveNow(nk, nr, selCats, {
+      scr:"type", pool:pool.map(x=>x.i), qi,
+      score:scoreRef.current, streak:streakRef.current, hp:hpRef.current,
+      cor: isOK ? [...cor, v[0]] : cor,
+      wrg: isOK ? wrg : [...wrg, v[0]],
+    });
+    setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = 9999; }, 120);
+  }
+
+  function showHint() {
+    if (!pool[qi]) return;
+    setHintUsed(true);
+    if (inputRef.current) inputRef.current.placeholder = pool[qi].v[0][0] + "·".repeat(pool[qi].v[0].length - 1);
+  }
+
+  function retryWrong() {
+    const nk = new Set(known), nr = new Set(review);
+    wrg.forEach(w => {
+      const idx = VOCAB.findIndex(v => v[0] === w);
+      if (idx >= 0) { nr.add(idx); nk.delete(idx); }
+    });
+    setKnown(nk); setReview(nr);
+    startType(true, nk, nr, selCats);
+  }
+
+  // ── STYLES ──
+  const T = {
+    bg:"#0A0A0A", bg2:"#111", bg3:"#181818",
+    line:"#1E1E1E", line2:"#2A2A2A", line3:"#363636",
+    t1:"#ECECEC", t2:"#787878", t3:"#424242",
+    green:"#1E6640", greenT:"#0D3320", greenFg:"#4DB87A",
+    red:"#6B2020", redT:"#331010", redFg:"#C97070",
+  };
+  const mono = { fontFamily:"'JetBrains Mono',monospace" };
+  const fullPage = {
+    fontFamily:"'Inter',-apple-system,sans-serif",
+    background:T.bg, color:T.t1,
+    height:"100dvh", display:"flex", flexDirection:"column",
+    WebkitFontSmoothing:"antialiased", fontSize:16,
+  };
+  const scrollFill = {
+    flex:1, overflowY:"auto", overflowX:"hidden",
+    WebkitOverflowScrolling:"touch",
+    overscrollBehaviorY:"contain",
+  };
+  const topbar = {
+    flexShrink:0, display:"flex", alignItems:"center", gap:10,
+    padding:"10px 16px",
+    borderBottom:`1px solid ${T.line}`,
+    background:T.bg, minHeight:52,
+  };
+  const backBtn = {
+    width:44, height:44, borderRadius:10,
+    border:`1px solid ${T.line2}`, background:"transparent",
+    color:T.t2, fontSize:16, cursor:"pointer",
+    display:"flex", alignItems:"center", justifyContent:"center",
+    flexShrink:0, WebkitAppearance:"none",
+  };
+  const catLbl = { fontSize:9, ...mono, letterSpacing:".13em", textTransform:"uppercase", color:T.t3 };
+  const btn = (fill) => ({
+    display:"block", width:"100%", minHeight:44,
+    padding:"13px 18px", borderRadius:10,
+    border: fill ? "none" : `1px solid ${T.line2}`,
+    background: fill ? T.t1 : T.bg2,
+    color: fill ? T.bg : T.t2,
+    fontSize:14, fontWeight:500, cursor:"pointer",
+    WebkitAppearance:"none", marginTop:8,
+    transition:"opacity .12s",
+  });
+  const synTag = {
+    fontSize:10, ...mono, padding:"2px 8px", borderRadius:4,
+    background:T.bg3, border:`1px solid ${T.line2}`, color:T.t3,
+    display:"inline-block", marginRight:4, marginBottom:3,
+  };
+  const exBox = {
+    fontSize:13, lineHeight:1.65, color:T.t2, fontStyle:"italic",
+    background:T.bg3, borderRadius:8, padding:"9px 11px", marginBottom:10,
+  };
+
+  const ProgBar = ({ left, right, pct }) => (
+    <div style={{ flexShrink:0, padding:"7px 16px 0" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+        <span style={{ fontSize:10, ...mono, color:T.t3 }}>{left}</span>
+        <span style={{ fontSize:10, ...mono, color:T.t3 }}>{right}</span>
+      </div>
+      <div style={{ height:2, background:T.line2, borderRadius:2, overflow:"hidden" }}>
+        <div style={{ height:"100%", background:T.t3, borderRadius:2, width:`${pct}%`, transition:"width .4s" }}/>
+      </div>
+    </div>
+  );
+
+  // ── HOME ──
+  if (screen === "home") return (
+    <div style={{ ...fullPage, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
+      <div style={{ padding:"28px 18px 20px", borderBottom:`1px solid ${T.line}` }}>
+        <div style={{ ...catLbl, marginBottom:10 }}>BizWords · Business English</div>
+        <div style={{ fontSize:26, fontWeight:300, lineHeight:1.25, letterSpacing:"-.02em" }}>
+          Learn <strong style={{ fontWeight:600 }}>287 Words</strong><br/>in 5 categories
+        </div>
+        <div style={{ fontSize:13, lineHeight:1.7, color:T.t3, marginTop:8 }}>
+          Flashcard จำคำ + synonyms · Typing ฝึกพิมพ์ + ประโยคตัวอย่าง
+        </div>
+      </div>
+
+      <div style={{ padding:"0 18px" }}>
+        {/* stats */}
+        <div style={{ display:"flex", gap:1, background:T.line, borderRadius:10, overflow:"hidden", margin:"16px 0" }}>
+          {[["Words", all.length], ["Known", knN], ["Review", rvN]].map(([l, n]) => (
+            <div key={l} style={{ flex:1, background:T.bg2, padding:"11px 8px", textAlign:"center" }}>
+              <div style={{ fontSize:20, fontWeight:600, color:T.t1, ...mono, lineHeight:1 }}>{n}</div>
+              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:".08em", color:T.t3, marginTop:3 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* categories */}
+        <div style={{ ...catLbl, marginBottom:7 }}>Category</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:22 }}>
+          {CATS.map(c => {
+            const on = selCats.has(c);
+            return (
+              <button key={c} onClick={() => {
+                const s = new Set(selCats);
+                if (s.has(c)) { if (s.size > 1) s.delete(c); } else s.add(c);
+                setSelCats(s);
+                saveNow(known, review, s, { scr:"home" });
+              }} style={{
+                padding:"6px 12px", minHeight:32, borderRadius:6,
+                fontSize:11, ...mono, letterSpacing:".03em",
+                border:`1px solid ${on ? T.line3 : T.line2}`,
+                background: on ? T.bg3 : T.bg2,
+                color: on ? T.t1 : T.t3,
+                cursor:"pointer", WebkitAppearance:"none",
+              }}>
+                {c} {VOCAB.filter(v => v[3] === c).length}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* modes */}
+        <div style={{ ...catLbl, marginBottom:6 }}>Mode</div>
+        <button style={btn(true)} onClick={() => startFlash()}>Flashcard — ดูและจำ</button>
+        <button style={btn(false)} onClick={() => startType(false)}>Typing — ฝึกพิมพ์ทุกคำ</button>
+        {rvN > 0 && (
+          <button style={btn(false)} onClick={() => startType(true)}>
+            Typing — ทบทวน {rvN} คำ
+          </button>
+        )}
+        <div style={{ height:40 }}/>
+      </div>
+    </div>
+  );
+
+  // ── FLASHCARD ──
+  if (screen === "flash") {
+    const total = fcData.length;
+    const kn2 = fcData.filter(({ i }) => known.has(i)).length;
+    const rv2 = fcData.filter(({ i }) => review.has(i)).length;
+    const done = kn2 + rv2;
+    const pct  = total > 0 ? Math.round(done / total * 100) : 0;
+
+    return (
+      <div style={fullPage}>
+        <div style={topbar}>
+          <button style={backBtn} onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>←</button>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={catLbl}>Flashcard</div>
+            <div style={{ fontSize:12, color:T.t2, marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+              {[...selCats].join(" · ")}
+            </div>
+          </div>
+          <span style={{ fontSize:11, ...mono, color:T.t3, flexShrink:0 }}>{done}/{total}</span>
+        </div>
+
+        <ProgBar left={`${pct}%`} right={`Known ${kn2} · Review ${rv2}`} pct={pct}/>
+
+        <div style={scrollFill}>
+          <div style={{ padding:"10px 15px 0" }}>
+            {/* Done banner */}
+            {done === total && total > 0 && (
+              <div style={{ background:T.bg2, border:`1px solid ${T.line}`, borderRadius:12, padding:"18px 16px", textAlign:"center", marginBottom:10 }}>
+                <div style={{ fontSize:36, fontWeight:600, ...mono }}>{kn2}/{total}</div>
+                <div style={{ fontSize:12, color:T.t2, marginTop:3, marginBottom:14 }}>
+                  Known · {Math.round(kn2 / total * 100)}%
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button style={{ ...btn(false), flex:1, marginTop:0 }} onClick={() => {
+                    const nk = new Set(known), nr = new Set(review);
+                    fcData.forEach(({ i }) => { nk.delete(i); nr.delete(i); });
+                    setKnown(nk); setReview(nr);
+                    startFlash(selCats);
+                  }}>Reset</button>
+                  <button style={{ ...btn(true), flex:1, marginTop:0 }} onClick={() => startType(true)}>
+                    Start Typing →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Cards */}
+            {fcData.map(({ v, i }, idx) => {
+              const st = known.has(i) ? "known" : review.has(i) ? "review" : "";
+              const syns = v[2].split(", ");
+              const exHl = hlWord(v[4], v[0]);
+              return (
+                <div key={i} style={{ marginBottom:10 }}>
+                  <WordCard word={v[0]} meaning={v[1]} category={v[3]} state={st}/>
+                  <div style={{
+                    background:T.bg2,
+                    border:`1px solid ${st==="known"?T.green:st==="review"?T.red:T.line}`,
+                    borderTop:"none",
+                    borderRadius:"0 0 10px 10px",
+                    padding:"10px 14px 13px",
+                  }}>
+                    <div style={{ ...catLbl, marginBottom:5 }}>Synonyms</div>
+                    <div style={{ marginBottom:10 }}>
+                      {syns.map(s => <span key={s} style={synTag}>{s.trim()}</span>)}
+                    </div>
+                    <div style={exBox} dangerouslySetInnerHTML={{ __html: exHl }}/>
+                    <div style={{ display:"flex", gap:7 }}>
+                      <button
+                        style={{ flex:1, minHeight:44, padding:"10px", borderRadius:8,
+                          fontSize:13, fontWeight:500, cursor:"pointer",
+                          border:`1px solid ${T.green}`, background:T.bg3, color:T.greenFg,
+                          WebkitAppearance:"none" }}
+                        onClick={() => markCard(i, true)}>
+                        Known
+                      </button>
+                      <button
+                        style={{ flex:1, minHeight:44, padding:"10px", borderRadius:8,
+                          fontSize:13, fontWeight:500, cursor:"pointer",
+                          border:`1px solid ${T.red}`, background:T.bg3, color:T.redFg,
+                          WebkitAppearance:"none" }}
+                        onClick={() => markCard(i, false)}>
+                        Review
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Sticky CTA */}
+            {rv2 > 0 && (
+              <div style={{
+                position:"sticky", bottom:0,
+                background:`linear-gradient(to top, ${T.bg} 55%, transparent)`,
+                padding:"10px 0 16px",
+              }}>
+                <button style={{ ...btn(true), marginTop:0 }} onClick={() => startType(true)}>
+                  Start Typing — {rv2} คำที่ต้องทบทวน →
+                </button>
+              </div>
+            )}
+            <div style={{ height:20 }}/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── TYPING ──
+  // Bug fix #7: guard empty pool
+  if (screen === "type") {
+    if (!pool.length) return (
+      <div style={{ ...fullPage, alignItems:"center", justifyContent:"center" }}>
+        <div style={{ color:T.t3, fontSize:14 }}>No words to practice.</div>
+        <button style={{ ...btn(true), width:"auto", padding:"12px 24px", marginTop:16 }}
+          onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>Back</button>
+      </div>
+    );
+
+    const cur   = pool[qi] || pool[0];
+    const { v } = cur;
+    const total = pool.length;
+    const pct   = Math.round(qi / total * 100);
+
+    return (
+      <div style={fullPage}>
+        <div style={topbar}>
+          <button style={backBtn} onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>←</button>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={catLbl}>Typing</div>
+            <div style={{ fontSize:12, color:T.t2, marginTop:2 }}>
+              {[...selCats].join(" · ")} · {total} words
+            </div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+            <span style={{ fontSize:12, ...mono, color:T.t2 }}>
+              ★ <strong style={{ color:T.t1 }}>{scoreDisp}</strong>
+            </span>
+            {/* hp dots */}
+            <div style={{ display:"flex", gap:3 }}>
+              {[0,1,2].map(n => (
+                <div key={n} style={{
+                  width:7, height:7, borderRadius:"50%",
+                  background: n < hpDisp ? T.t2 : T.line2,
+                  transition:"background .25s",
+                }}/>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <ProgBar left={`${pct}%`} right={`${qi+1} / ${total}`} pct={pct}/>
+
+        <div ref={scrollRef} style={scrollFill}>
+          <div style={{ padding:"10px 15px 0" }}>
+            <WordCard word={v[0]} meaning={v[1]} category={v[3]} state=""/>
+          </div>
+          <div style={{ padding:"8px 15px 0" }}>
+            {/* question */}
+            <div style={{
+              background:T.bg2, border:`1px solid ${T.line}`,
+              borderRadius:10, padding:"12px 14px", marginBottom:9,
+            }}>
+              <div style={{ ...catLbl, marginBottom:5 }}>พิมพ์คำภาษาอังกฤษ</div>
+              <div style={{ fontSize:15, lineHeight:1.5, color:T.t1 }}>
+                "{v[1]}"
+              </div>
+            </div>
+
+            {/* synonyms hint */}
+            <div style={{ marginBottom:9 }}>
+              <span style={{ ...catLbl, marginRight:6 }}>Synonyms</span>
+              {v[2].split(", ").map(s => (
+                <span key={s} style={synTag}>{s.trim()}</span>
+              ))}
+            </div>
+
+            {/* input */}
+            <div style={{ display:"flex", gap:8, marginBottom:6 }}>
+              <input
+                ref={inputRef}
+                value={typed}
+                onChange={e => setTyped(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitType(); } }}
+                disabled={answered}
+                placeholder="Type the English word…"
+                autoComplete="off" autoCorrect="off"
+                autoCapitalize="off" spellCheck="false"
+                style={{
+                  flex:1, height:48, padding:"0 14px",
+                  background:T.bg2,
+                  border:`1px solid ${answered ? (fb?.ok ? T.green : T.red) : T.line2}`,
+                  borderRadius:10,
+                  color: answered ? (fb?.ok ? T.greenFg : T.redFg) : T.t1,
+                  fontSize:16, outline:"none",
+                  WebkitAppearance:"none", caretColor:T.t1,
+                  transition:"border-color .15s, color .15s",
+                }}
+              />
+              <button
+                onClick={submitType}
+                disabled={answered}
+                style={{
+                  width:48, height:48, borderRadius:10,
+                  background:T.bg2, border:`1px solid ${T.line2}`,
+                  color:T.t2, fontSize:15, cursor:"pointer",
+                  WebkitAppearance:"none",
+                }}>
+                ↵
+              </button>
+            </div>
+
+            {/* hint */}
+            {!answered && !hintUsed && (
+              <button onClick={showHint} style={{
+                background:"none", border:"none", padding:"3px 0",
+                fontSize:12, color:T.t3, textDecoration:"underline",
+                cursor:"pointer", display:"block",
+              }}>
+                Show hint
+              </button>
+            )}
+
+            {/* feedback */}
+            {fb && (
+              <div style={{
+                borderRadius:10, padding:"10px 13px",
+                fontSize:13, lineHeight:1.55, marginTop:8, marginBottom:8,
+                background: fb.ok ? T.greenT : T.redT,
+                border:`1px solid ${fb.ok ? T.green : T.red}`,
+                color: fb.ok ? T.greenFg : T.redFg,
+                animation:"fbi .18s ease",
+              }}>
+                {fb.msg}
+              </div>
+            )}
+
+            {/* example */}
+            {showEx && (
+              <div>
+                <div style={{ ...catLbl, marginBottom:5 }}>Example</div>
+                <div
+                  style={exBox}
+                  dangerouslySetInnerHTML={{ __html: hlWord(v[4], v[0]) }}
+                />
+              </div>
+            )}
+          </div>
+          <div style={{ height:96 }}/>
+        </div>
+
+        {/* next CTA */}
+        {answered && (
+          <div style={{
+            position:"absolute", bottom:0, left:0, right:0,
+            padding:"10px 16px 20px",
+            background:`linear-gradient(to top, ${T.bg} 55%, transparent)`,
+          }}>
+            <button style={{ ...btn(true), marginTop:0 }} onClick={nextType}>
+              {qi + 1 >= pool.length || hpRef.current <= 0 ? "See Results →" : "Next →"}
+            </button>
+          </div>
+        )}
+        <style>{`@keyframes fbi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      </div>
+    );
+  }
+
+  // ── RESULT ──
+  if (screen === "result") {
+    const tot = pool.length;
+    const c   = cor.length;
+    const pct = tot > 0 ? Math.round(c / tot * 100) : 0;
+    let grade, msg;
+    if      (pct >= 90) { grade = "Excellent";    msg = `${c}/${tot} correct (${pct}%) — Outstanding`; }
+    else if (pct >= 70) { grade = "Well done";     msg = `${c}/${tot} correct (${pct}%) — Good job`; }
+    else if (pct >= 50) { grade = "Keep going";    msg = `${c}/${tot} correct (${pct}%) — Keep practicing`; }
+    else                { grade = "Review needed"; msg = `${c}/${tot} correct (${pct}%) — Try flashcard first`; }
+
+    return (
+      <div style={{ ...fullPage, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:14, padding:"40px 18px 40px" }}>
+          <div style={{ fontSize:60, fontWeight:600, ...mono, lineHeight:1, animation:"popin .4s ease" }}>
+            {scoreDisp}
+          </div>
+          <div style={{ fontSize:15, fontWeight:500, color:T.t1 }}>{grade}</div>
+          <div style={{ fontSize:13, color:T.t2, textAlign:"center" }}>{msg}</div>
+
+          <div style={{ width:"100%", background:T.bg2, border:`1px solid ${T.line}`, borderRadius:12, padding:14 }}>
+            <div style={{ ...catLbl, marginBottom:9 }}>Words this session</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+              {pool.map(({ v }) => (
+                <span key={v[0]} style={{
+                  fontSize:11, padding:"3px 9px", borderRadius:5,
+                  background: cor.includes(v[0]) ? T.greenT : wrg.includes(v[0]) ? T.redT : T.bg3,
+                  border:`1px solid ${cor.includes(v[0]) ? T.green : wrg.includes(v[0]) ? T.red : T.line2}`,
+                  color: cor.includes(v[0]) ? T.greenFg : wrg.includes(v[0]) ? T.redFg : T.t2,
+                }}>
+                  {v[0]}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ width:"100%" }}>
+            {wrg.length > 0 && (
+              <button style={btn(false)} onClick={retryWrong}>
+                Retry {wrg.length} wrong words
+              </button>
+            )}
+            <button style={btn(true)} onClick={() => { setScreen("home"); saveNow(known, review, selCats, { scr:"home" }); }}>
+              Back to Home
+            </button>
+          </div>
+        </div>
+        <style>{`@keyframes popin{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}`}</style>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+
+</script>
+</body>
+</html>
