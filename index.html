@@ -19,8 +19,6 @@ input,button{font-family:inherit;-webkit-appearance:none}
 </head>
 <body>
 <div id="root"></div>
-
-<!-- VOCAB data: plain JS, no compilation needed -->
 <script>
 const VOCAB=[
   ["Achieve", "สำเร็จ", "Accomplish, Attain", "Business", "She worked hard to achieve her sales target this quarter."],
@@ -1220,17 +1218,13 @@ const VOCAB=[
 ];
 
 </script>
-
-<!-- React + ReactDOM -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-<!-- Babel: compiles only ~32KB of app code, not 137KB of data -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useCallback } = React;
 
-const CATS = ["Business","Finance","Service","Jobs","Marketing"];
+const CATSconst CATS = ["Business","Finance","Service","Jobs","Marketing"];
 const SK = "bizwords_v6";
 
 // ── STORAGE ──
@@ -1688,7 +1682,7 @@ function App() {
       <div style={{ padding:"28px 18px 20px", borderBottom:`1px solid ${T.line}` }}>
         <div style={{ ...catLbl, marginBottom:10 }}>BizWords · Business English</div>
         <div style={{ fontSize:26, fontWeight:300, lineHeight:1.25, letterSpacing:"-.02em" }}>
-          Learn <strong style={{ fontWeight:600 }}>1,194 Words</strong><br/>ครอบคลุม TOEIC ~90%
+          Learn <strong style={{ fontWeight:600 }}>1,194 Words</strong><br/>in 5 categories
         </div>
         <div style={{ fontSize:13, lineHeight:1.7, color:T.t3, marginTop:8 }}>
           Flashcard จำคำ + synonyms · Typing ฝึกพิมพ์ · Synonym ฝึกจำคำเหมือน
